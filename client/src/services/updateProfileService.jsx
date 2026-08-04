@@ -1,0 +1,2 @@
+export { updatePatient } from "./patientServices";
+
