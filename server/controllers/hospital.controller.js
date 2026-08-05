@@ -3,6 +3,7 @@ import { Assistant } from "../models/Assistant.js";
 import { Doctor } from "../models/Doctor.js";
 import { Appointment } from "../models/Appointment.js";
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
 
 // Register a hospital
 export const registerHospital = async (req, res) => {
@@ -33,8 +34,25 @@ export const registerHospital = async (req, res) => {
 
     await hospital.save();
 
-    // Ensure user role is updated to hospitalAdmin
+    // Ensure user role is updated to hospitalAdmin in DB
     await User.findByIdAndUpdate(userId, { role: "hospitalAdmin" });
+
+    // Issue a fresh JWT so protected hospital routes recognize the updated role
+    try {
+      const token = jwt.sign({ id: userId, role: "hospitalAdmin" }, process.env.JWT_SECRET_KEY, {
+        expiresIn: "3d",
+      });
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    } catch (tokenErr) {
+      console.error("Error issuing token after hospital register:", tokenErr);
+    }
 
     res.status(201).json({ message: "Hospital registered successfully.", hospital, success: true });
   } catch (error) {
