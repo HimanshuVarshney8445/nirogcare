@@ -5,6 +5,11 @@ export async function getAllDoctorsbyHospitals(hospitalId) {
   return response.data;
 }
 
+export async function getAllHospitals(query = "") {
+  const response = await api.get("/api/hospital/list", { params: query ? { q: query } : {} });
+  return response.data;
+}
+
 export async function registerHospital(formData) {
   const response = await api.post("/api/hospital/register", formData);
   return response.data;

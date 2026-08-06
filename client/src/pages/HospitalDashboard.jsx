@@ -41,7 +41,9 @@ const HospitalDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [notifications] = useState(5);
   const [toggleSideBar, setToggleSideBar] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [hospitalProfile, setHospitalProfile] = useState(null);
+  const [hospitalProfileLoading, setHospitalProfileLoading] = useState(true);
+  const [hospitalProfileError, setHospitalProfileError] = useState(null);
   const [doctorsPatientsData, setDoctorsPatientsData] = useState([]);
   const [AllPatients, setAllPatients] = useState([]);
   const [allAssistants, setAllAssistants] = useState([]);
@@ -73,20 +75,27 @@ const HospitalDashboard = () => {
 
 
   const getHospitalProfile = async () => {
+    setHospitalProfileLoading(true);
     try {
       const response = await getHospital();
-      if (response) {
-        console.log(response);
-        setUserData(response.hospital)
-      }
-
+      setHospitalProfile(response.hospital || null);
+      setHospitalProfileError(null);
     } catch (error) {
-      console.log("Error in fetching profile", error)
+      console.log("Error in fetching profile", error);
+      if (error?.status === 404) {
+        setHospitalProfile(null);
+        setHospitalProfileError("No hospital profile found. Please register your hospital.");
+      } else {
+        setHospitalProfileError("Unable to load hospital profile.");
+      }
+    } finally {
+      setHospitalProfileLoading(false);
     }
-  }
+  };
+
   useEffect(() => {
     getHospitalProfile();
-  }, [])
+  }, []);
 
 
 
@@ -191,6 +200,23 @@ const HospitalDashboard = () => {
               <p className="text-gray-300">Real-time hospital operations dashboard</p>
             </div>
 
+            {!hospitalProfile && !hospitalProfileLoading && (
+              <div className="bg-gray-900/80 border border-green-500/20 rounded-2xl p-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Hospital not registered yet</h3>
+                    <p className="text-gray-400 mt-2">Click below to register your hospital and complete your profile.</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/hospitalAdmin/profile')}
+                    className="rounded-xl bg-gradient-to-r from-green-500 to-cyan-400 px-6 py-3 font-semibold text-black hover:opacity-90 transition"
+                  >
+                    Register Hospital
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {hospitalStats.map((stat, index) => (
@@ -261,6 +287,37 @@ const HospitalDashboard = () => {
           </div>
         );
       case 'profile':
+        if (hospitalProfileLoading) {
+          return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-white">Loading hospital profile...</div>
+            </div>
+          );
+        }
+
+        if (!hospitalProfile) {
+          return (
+            <div className="flex items-center justify-center min-h-[60vh] px-4">
+              <div className="w-full max-w-2xl bg-gray-900/80 rounded-3xl border border-green-500/20 p-8 shadow-2xl">
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold text-white">Hospital Profile</h2>
+                  <p className="text-gray-400 mt-2">No hospital profile is registered yet.</p>
+                </div>
+                <div className="bg-gray-800/40 rounded-2xl border border-gray-700/60 p-6 space-y-4">
+                  <p className="text-gray-300">To use the hospital admin dashboard, please register your hospital first.</p>
+                  <p className="text-gray-500 text-sm">Your hospital data will appear here once registration is complete.</p>
+                  <button
+                    onClick={() => navigate('/hospitalAdmin/profile')}
+                    className="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-cyan-400 px-6 py-3 font-semibold text-black hover:opacity-90 transition"
+                  >
+                    Register Hospital
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div className="flex items-center justify-center ">
             <div className="w-full max-w-lg border-none">
@@ -289,32 +346,32 @@ const HospitalDashboard = () => {
                     <div className="flex items-center group">
                       <User className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Name:</span>
-                      <span className="text-white ml-2 font-medium">{userData?.name || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?.name || 'N/A'}</span>
                     </div>
                     <div className="flex items-center group">
                       <Phone className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Phone:</span>
-                      <span className="text-white ml-2 font-medium">{userData?.phone || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?.phone || 'N/A'}</span>
                     </div>
                     <div className="flex items-center group">
                       <Mail className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Email:</span>
-                      <span className="text-white ml-2 font-medium">{userData?.userId?.email || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?.userId?.email || 'N/A'}</span>
                     </div>
                     <div className="flex items-center group">
                       <Scale className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Licence No:</span>
-                      <span className="text-white ml-2 font-medium">{userData?.licenseNumber || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?.licenseNumber || 'N/A'}</span>
                     </div>
                     <div className="flex items-center group">
                       <IdCard className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Id:</span>
-                      <span className="text-white ml-2 font-medium">{userData?._id || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?._id || 'N/A'}</span>
                     </div>
                     <div className="flex items-center group">
                       <MapPin className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
                       <span className="text-gray-300 text-sm min-w-[60px]">Address:</span>
-                      <span className="text-white ml-2 font-medium">{userData?.address || 'N/A'}</span>
+                      <span className="text-white ml-2 font-medium">{hospitalProfile?.address || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -333,7 +390,7 @@ const HospitalDashboard = () => {
             </div>
           </div>
 
-        )
+        );
       case 'patients': {
         const filteredPatients = AllPatients.filter((patient) => {
           const name = patient.name?.toLowerCase() || "";
@@ -516,7 +573,7 @@ const HospitalDashboard = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-medium">{userData?.userId?.name}</span>
+                <span className="text-white font-medium">{hospitalProfile?.userId?.name || 'Hospital Admin'}</span>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User, Stethoscope, Calendar, CreditCard, Building, GraduationCap } from "lucide-react";
-import { doctorProfileApi } from "../services/doctorServices";
+import { doctorProfileApi, getDoctorProfileApi } from "../services/doctorServices";
+import { getAllHospitals } from "../services/hospitalsServices";
 const UpdateDoctorProfile = ({ doctorDetails }) => {
   const [formData, setFormData] = useState({
     gender: "",
@@ -9,14 +10,43 @@ const UpdateDoctorProfile = ({ doctorDetails }) => {
     licenseNumber: "",
     hospitalId: "",
     education: "",
-    userId : doctorDetails?._id
   });
+  const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [fetching, setFetching] = useState(true);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setMessage(""); 
+  };
+
+  const fetchHospitals = async () => {
+    try {
+      const response = await getAllHospitals();
+      setHospitals(response.hospitals || []);
+    } catch (error) {
+      console.error("Error fetching hospitals:", error);
+    }
+  };
+
+  const fetchDoctorProfile = async () => {
+    try {
+      const response = await getDoctorProfileApi();
+      if (response?.doctor) {
+        setFormData((prev) => ({
+          ...prev,
+          gender: response.doctor.gender || "",
+          specialization: response.doctor.specialization || "",
+          experience: response.doctor.experience || "",
+          licenseNumber: response.doctor.licenseNumber || "",
+          hospitalId: response.doctor.hospitalId?._id || "",
+          education: response.doctor.education || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching doctor profile:", error);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -24,20 +54,25 @@ const UpdateDoctorProfile = ({ doctorDetails }) => {
     setLoading(true);
     
     try {
-      console.log(formData)
-
-      const response = await doctorProfileApi(formData)
-      if(response){
-        console.log("Doctor profile updated successfully !!", response);
+      const response = await doctorProfileApi(formData);
+      if (response) {
         setMessage("Profile updated successfully!");
       }
     } catch (err) {
-      console.log(err)
-      setMessage("Error updating profile. Please try again.");
+      console.error(err);
+      setMessage(err?.response?.data?.error || "Error updating profile. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      await Promise.all([fetchHospitals(), fetchDoctorProfile()]);
+      setFetching(false);
+    };
+    load();
+  }, []);
 
   const fields = [
     { name: "gender", label: "gender", type: "select", icon: User, required: true,
@@ -45,16 +80,16 @@ const UpdateDoctorProfile = ({ doctorDetails }) => {
     { name: "specialization", label: "Specialization", type: "text", icon: Stethoscope, required: true },
     { name: "experience", label: "Experience (Years)", type: "number", icon: Calendar, min: 0, max: 60 },
     { name: "licenseNumber", label: "License Number", type: "text", icon: CreditCard, required: true },
-    { name: "hospitalId", label: "Hospital ID", type: "text", icon: Building, required: true },
+    { name: "hospitalId", label: "Hospital", type: "hospital-select", icon: Building, required: true },
     { name: "education", label: "Education", type: "text", icon: GraduationCap },
   ];
 
-  if (loading) {
+  if (fetching) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg">Updating profile...</p>
+          <p className="text-lg">Loading profile and hospitals...</p>
         </div>
       </div>
     );
@@ -106,6 +141,21 @@ const UpdateDoctorProfile = ({ doctorDetails }) => {
                         {field.options.map(option => (
                           <option key={option} value={option.toLowerCase()}>
                             {option || "Select " + field.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === "hospital-select" ? (
+                      <select
+                        name={field.name}
+                        value={formData[field.name]}
+                        onChange={handleChange}
+                        required={field.required}
+                        className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Hospital</option>
+                        {hospitals.map((hospital) => (
+                          <option key={hospital._id} value={hospital._id}>
+                            {hospital.name} - {hospital.address}
                           </option>
                         ))}
                       </select>

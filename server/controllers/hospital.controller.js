@@ -19,6 +19,13 @@ export const registerHospital = async (req, res) => {
       return res.status(400).json({ error: "Hospital already registered." });
     }
 
+    const longitudeValue = parseFloat(longitude);
+    const latitudeValue = parseFloat(latitude);
+
+    if (Number.isNaN(longitudeValue) || Number.isNaN(latitudeValue)) {
+      return res.status(400).json({ error: "Invalid latitude or longitude values." });
+    }
+
     const hospital = new Hospital({
       userId,
       name,
@@ -27,7 +34,7 @@ export const registerHospital = async (req, res) => {
       licenseNumber,
       location: {
         type: "Point",
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+        coordinates: [longitudeValue, latitudeValue],
       },
     });
 
@@ -39,6 +46,10 @@ export const registerHospital = async (req, res) => {
     res.status(201).json({ message: "Hospital registered successfully.", hospital, success: true });
   } catch (error) {
     console.error("Error registering hospital:", error);
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0] || "Hospital";
+      return res.status(400).json({ error: `${duplicateField} already exists.` });
+    }
     res.status(500).json({ error: "Failed to register hospital." });
   }
 };
@@ -260,6 +271,30 @@ export const getAllAssistantsForHospital = async (req, res) => {
     });
   }
 };
+
+export const getAllHospitals = async (req, res) => {
+  try {
+    const query = req.query.q ? req.query.q.trim() : "";
+    const filter = query
+      ? {
+          $or: [
+            { name: { $regex: query, $options: "i" } },
+            { address: { $regex: query, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const hospitals = await Hospital.find(filter)
+      .select("_id name address phone location")
+      .lean();
+
+    res.status(200).json({ hospitals });
+  } catch (error) {
+    console.error("Error fetching hospitals list:", error);
+    res.status(500).json({ error: "Failed to fetch hospitals." });
+  }
+};
+
 
 
 

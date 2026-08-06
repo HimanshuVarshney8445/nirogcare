@@ -4,7 +4,8 @@ import {
   getMyHospitalProfile,
   getPatientStats,
   getAllHospitalPatients,
-  getAllAssistantsForHospital
+  getAllAssistantsForHospital,
+  getAllHospitals,
 } from "../controllers/hospital.controller.js";
 import { allowRoles, protect } from "../middlewares/auth.middleware.js";
 
@@ -15,6 +16,9 @@ router.use(protect);
 
 // Allow any authenticated user to register a hospital (user may later be assigned hospitalAdmin role)
 router.post("/register", registerHospital);
+
+// Allow doctors and patients to fetch hospital search/list data
+router.get("/list", getAllHospitals);
 
 // Restrict the remaining hospital routes to hospital admins only
 router.use(allowRoles("hospitalAdmin"));

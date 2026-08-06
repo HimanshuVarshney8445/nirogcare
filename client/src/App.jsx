@@ -56,7 +56,7 @@ const App = () => {
       <Route
         path="/hospitalAdmin/profile"
         element={
-          <ProtectedRoute allowedRoles={["hospitalAdmin"]}>
+          <ProtectedRoute>
             <HospitalProfileForm />
           </ProtectedRoute>
         }

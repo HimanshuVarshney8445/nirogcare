@@ -1,8 +1,10 @@
+import mongoose from "mongoose";
 import { Doctor } from "../models/Doctor.js";
 import {Appointment} from "../models/Appointment.js"
 import User from "../models/User.js";
 import { Assistant } from "../models/Assistant.js";
 import { MedicalRecord } from "../models/MedicalRecord.js";
+import { Hospital } from "../models/Hospital.js";
 
 
 export const doctorProfile = async (req, res) => {
@@ -14,14 +16,24 @@ export const doctorProfile = async (req, res) => {
       licenseNumber,
       hospitalId,
       education,
-      userId
     } = req.body;
+
+    const userId = req.user.id;
 
     let doctor = await Doctor.findOne({ userId });
 
     if (!doctor) {
       if (!gender || !specialization || !licenseNumber || !hospitalId) {
         return res.status(400).json({ error: "All required fields must be filled." });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
+        return res.status(400).json({ error: "Invalid hospitalId format." });
+      }
+
+      const hospitalExists = await Hospital.findById(hospitalId);
+      if (!hospitalExists) {
+        return res.status(404).json({ error: "Selected hospital not found." });
       }
 
       const newDoctor = await Doctor.create({
@@ -44,7 +56,18 @@ export const doctorProfile = async (req, res) => {
       doctor.specialization = specialization || doctor.specialization;
       doctor.experience = experience !== undefined ? experience : doctor.experience;
       doctor.licenseNumber = licenseNumber || doctor.licenseNumber;
-      doctor.hospitalId = hospitalId || doctor.hospitalId;
+      if (hospitalId) {
+        if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
+          return res.status(400).json({ error: "Invalid hospitalId format." });
+        }
+
+        const hospitalExists = await Hospital.findById(hospitalId);
+        if (!hospitalExists) {
+          return res.status(404).json({ error: "Selected hospital not found." });
+        }
+
+        doctor.hospitalId = hospitalId;
+      }
       doctor.education = education || doctor.education;
 
       await doctor.save();

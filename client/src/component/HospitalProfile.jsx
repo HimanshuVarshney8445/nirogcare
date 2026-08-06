@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { registerHospital } from '../services/hospitalsServices';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
  // 🔁 Make sure this service exists
 
@@ -85,7 +86,9 @@ const HospitalRegistration = ({ onRegistered = () => {} }) => {
       setMessageType("success");
       onRegistered();
     } catch (error) {
-      setMessage(error?.error || "An unexpected error occurred.");
+      const message = error?.data?.message || error?.message || error?.error || "An unexpected error occurred.";
+      console.error("Hospital registration failed:", error);
+      setMessage(message);
       setMessageType("error");
     } finally {
       setLoading(false);
