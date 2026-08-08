@@ -479,9 +479,8 @@ if (!hospitals || hospitals.length === 0) {
                     onChange={(e) => handleInputChange('mode', e.target.value)}
                   >
                     <option value="">Select Mode</option>
-                    <option value="online">Offline</option>
-                    <option value="offline">Online</option>
-                    
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
                   </select>
                 </div>
           

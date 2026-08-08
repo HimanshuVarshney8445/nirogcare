@@ -552,8 +552,6 @@ const DoctorDashboard = () => {
       {showDiagnosisForm && selectedPatient && (
         <DiagnosisForm
           patient={selectedPatient}
-          doctorId={selectedPatient}
-          hospitalId={selectedPatient} // You'll need to get this from your app state
           onClose={handleCloseDiagnosisForm}
           onSubmit={handleSubmitDiagnosis}
         />

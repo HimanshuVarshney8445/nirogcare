@@ -1,6 +1,7 @@
 import { MedicalRecord } from "../models/MedicalRecord.js";
 import { Doctor } from "../models/Doctor.js";
 import { Patient } from "../models/Patient.js";
+import { Appointment } from "../models/Appointment.js";
 
 
 export const addMedicalRecord = async (req, res) => {
@@ -35,6 +36,8 @@ export const addMedicalRecord = async (req, res) => {
 
     await record.save();
 
+    await Appointment.findByIdAndUpdate(appointmentId, { status: "completed" });
+
     res.status(201).json({
       message: "Medicine record saved successfully.",
       record,
@@ -58,21 +61,20 @@ export const getMedicalRecords = async (req, res) => {
 
     const records = await MedicalRecord.find({ patientId: patient._id })
       .populate({
-          path: "doctorId",
-          select: "specialization hospitalId userId", 
-          populate: [
-            {
-              path: "hospitalId",
-              select: "name", 
-            },
-            {
-              path: "userId",
-              select: "name", 
-            },
-          ],
-        })
-
-
+        path: "doctorId",
+        select: "specialization hospitalId userId",
+        populate: [
+          {
+            path: "hospitalId",
+            select: "name",
+          },
+          {
+            path: "userId",
+            select: "name",
+          },
+        ],
+      })
+      .populate("appointmentId", "date timeSlot mode status")
       .sort({ prescribedAt: -1 });
 
     res.status(200).json({

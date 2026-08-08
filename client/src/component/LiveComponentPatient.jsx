@@ -10,8 +10,27 @@ import VideoCall from './VideoCall';
 const LiveComponentPatient = ({ onlineAppointment, name  }) => {
   const [activeCall, setActiveCall] = useState(null);
   const [loading , setLoading] = useState(true);
-  
 
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate()
+    );
+  };
+
+  const canJoinCall = (appointment) => {
+    if (!appointment) return false;
+    const status = appointment.status?.toLowerCase();
+    return (
+      status === 'booked' &&
+      appointment.mode === 'online' &&
+      isToday(appointment.date)
+    );
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -25,9 +44,7 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
 
 
       useEffect(() => {
-    if (onlineAppointment.length > 0) {
-      setLoading(false);
-    }
+    setLoading(false);
   }, [onlineAppointment]);
 
   const handleJoinCall = (appointment) => {
@@ -157,12 +174,33 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
 
                 {/* Join Call Button */}
                 <button
-                  onClick={() => handleJoinCall(appointment)}
-                  className="w-full cursor-pointer bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-black font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-green-500/25"
-                >
-                  <Video size={20} />
-                  <span>Join Call</span>
-                </button>
+  onClick={() => handleJoinCall(appointment)}
+  disabled={!canJoinCall(appointment)}
+  className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg ${
+    canJoinCall(appointment)
+      ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-500/25 cursor-pointer'
+      : appointment.status?.toLowerCase() === 'booked' &&
+        appointment.mode === 'online' &&
+        !isToday(appointment.date)
+        ? 'bg-gradient-to-r from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-400/25 cursor-not-allowed'
+        : 'bg-gray-700 text-gray-300 cursor-not-allowed shadow-none'
+  }`}
+>
+  <Video size={20} />
+
+  <span>
+    {appointment.status?.toLowerCase() === 'completed'
+      ? 'Completed'
+      : canJoinCall(appointment)
+        ? 'Join Call'
+        : 'Upcoming....'}
+  </span>
+</button>
+                {!canJoinCall(appointment) && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    Video call becomes active on the appointment day for booked online visits.
+                  </p>
+                )}
               </div>
             ))}
           </div>

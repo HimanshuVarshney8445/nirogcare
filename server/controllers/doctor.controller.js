@@ -143,6 +143,7 @@ export const todaysPatients = async (req, res) => {
       status: { $ne: "cancelled" },
     })
       .populate("bookedBy", "name email")
+      .populate("patientId", "_id")
       .sort({ timeSlot: 1 });
 
     return res.status(200).json({

@@ -8,12 +8,31 @@ const DoctorOnlinePatients = ({ onlineAppointments = [], name }) => {
   console.log(onlineAppointments);
 
   const handleJoinCall = (appointment , name) => {
-
     setActiveCall({
       callId: appointment,
       name: name
     });
-    
+  };
+
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate()
+    );
+  };
+
+  const canJoinCall = (appointment) => {
+    if (!appointment) return false;
+    const status = appointment.status?.toLowerCase();
+    return (
+      status === 'booked' &&
+      appointment.mode === 'online' &&
+      isToday(appointment.date)
+    );
   };
 
   const formatDate = (dateString) => {
@@ -158,16 +177,18 @@ const DoctorOnlinePatients = ({ onlineAppointments = [], name }) => {
               <div className="p-6 pt-0">
                 <button
                   onClick={() => handleJoinCall(appointment._id, appointment.bookedBy?.name)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 group"
-                  disabled={appointment.status?.toLowerCase() !== 'booked'}
+                  disabled={!canJoinCall(appointment)}
+                  className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${canJoinCall(appointment)
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-emerald-500/20'
+                    : 'bg-gray-700 text-gray-300 cursor-not-allowed shadow-none'
+                  }`}
                 >
-                  <Video className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span>Join Call</span>
+                  <Video className="w-5 h-5" />
+                  <span>{canJoinCall(appointment) ? 'Join Call' : 'Available Today'}</span>
                 </button>
-                
-                {appointment.status?.toLowerCase() !== 'booked' && (
+                {!canJoinCall(appointment) && (
                   <p className="text-xs text-gray-500 text-center mt-2">
-                    Call only available for booked appointments
+                    Call opens on the appointment date when online and booked.
                   </p>
                 )}
               </div>

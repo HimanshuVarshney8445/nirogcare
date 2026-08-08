@@ -45,8 +45,8 @@ const UpdatePatientProfile = ({ userData = {} }) => {
               </div>
               <div className="flex items-center group">
                 <IdCard className="w-5 h-5 text-green-400 mr-3 group-hover:scale-110 transition-transform" />
-                <span className="text-gray-300 text-sm min-w-[60px]">Id:</span>
-                <span className="text-white ml-2 font-medium">{userData?.user?._id || 'N/A'}</span>
+                <span className="text-gray-300 text-sm min-w-[60px]">Profile ID:</span>
+                <span className="text-white ml-2 font-medium">Hidden for privacy</span>
               </div>
             </div>
           </div>

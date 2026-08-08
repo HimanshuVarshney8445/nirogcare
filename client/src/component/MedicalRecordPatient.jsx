@@ -224,14 +224,33 @@ const MedicalRecordPatient = ({ medicalRecord = [] }) => {
                       </div>
                     )}
 
-                    {(record?.medicine || record?.diagnosis) && (
+                    {(record?.medicines?.length > 0 || record?.notes) && (
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-purple-500/20 rounded-lg">
                           <Stethoscope className="w-4 h-4 text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-gray-400 text-xs uppercase tracking-wide">Diagnosis</p>
-                          <p className="text-white font-medium">{record.medicine || record.diagnosis}</p>
+                          <p className="text-gray-400 text-xs uppercase tracking-wide">Prescription Summary</p>
+                          <p className="text-white font-medium">
+                            {record?.medicines?.length > 0
+                              ? `${record.medicines.length} medicine${record.medicines.length > 1 ? 's' : ''} prescribed`
+                              : 'No medicines listed'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {record?.appointmentId && (
+                      <div className="flex items-start gap-3 mt-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg">
+                          <Calendar className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs uppercase tracking-wide">Appointment</p>
+                          <p className="text-white font-medium">
+                            {new Date(record.appointmentId.date).toLocaleDateString('en-US', {
+                              weekday: 'short', month: 'short', day: 'numeric'
+                            })} • {record.appointmentId.timeSlot}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -271,16 +290,16 @@ const MedicalRecordPatient = ({ medicalRecord = [] }) => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Prescribed Medicines */}
                       {record?.medicines?.length > 0 && (
-                        <div className="bg-white/5 rounded-xl p-4">
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                           <div className="flex items-center gap-2 mb-3">
                             <Pill className="w-5 h-5 text-green-400" />
                             <h4 className="text-white font-semibold">Prescribed Medicines</h4>
                           </div>
                           <div className="space-y-3">
                             {record.medicines.map((med, idx) => (
-                              <div key={idx} className="bg-white/5 rounded-lg p-3">
-                                <p className="text-green-400 font-medium">{med.name}</p>
-                                <div className="text-sm text-gray-300 mt-1 space-y-1">
+                              <div key={idx} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                                <p className="text-green-400 font-semibold">{med.name}</p>
+                                <div className="text-sm text-gray-300 mt-2 space-y-1">
                                   <p><span className="text-gray-400">Dosage:</span> {med.dosage}</p>
                                   <p><span className="text-gray-400">Frequency:</span> {med.frequency}</p>
                                   <p><span className="text-gray-400">Duration:</span> {med.duration}</p>
@@ -293,15 +312,19 @@ const MedicalRecordPatient = ({ medicalRecord = [] }) => {
                       )}
 
                       {/* Doctor's Notes */}
-                      {record?.notes && record.notes.trim() !== "" && (
-                        <div className="bg-white/5 rounded-xl p-4">
+                      {(record?.notes && record.notes.trim() !== "") || !record?.medicines?.length ? (
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                           <div className="flex items-center gap-2 mb-3">
                             <AlertCircle className="w-5 h-5 text-blue-400" />
                             <h4 className="text-white font-semibold">Doctor's Notes</h4>
                           </div>
-                          <p className="text-gray-300 text-sm leading-relaxed">{record.notes}</p>
+                          {record?.notes ? (
+                            <p className="text-gray-300 text-sm leading-relaxed">{record.notes}</p>
+                          ) : (
+                            <p className="text-gray-400 text-sm">No additional notes provided.</p>
+                          )}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 )}

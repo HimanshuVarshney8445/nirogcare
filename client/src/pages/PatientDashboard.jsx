@@ -69,6 +69,7 @@ const PatientDashboard = () => {
   const [labReports, setLabReport] = useState([]);
   const [onlineAppointment, setOnlineAppointment] = useState([]);
 
+
   // Search state for records
 
 
@@ -278,34 +279,82 @@ const PatientDashboard = () => {
     { id: "ai", label: "AI Assistant", icon: BotMessageSquare },
   ];
 
+  const parseBloodPressure = (bloodPressure = "") => {
+    const [systolic, diastolic] = bloodPressure.split("/").map((part) => parseInt(part, 10));
+    return {
+      systolic: Number.isFinite(systolic) ? systolic : null,
+      diastolic: Number.isFinite(diastolic) ? diastolic : null,
+    };
+  };
+
+  const getVitalStatus = (type, value) => {
+    if (value === null || value === undefined || value === "") return { label: "unknown", color: "text-gray-400" };
+
+    switch (type) {
+      case "heartRate": {
+        const heartRate = Number(value);
+        if (heartRate < 50 || heartRate > 110) return { label: "risky", color: "text-red-400" };
+        if (heartRate < 60 || heartRate > 100) return { label: "moderate", color: "text-yellow-300" };
+        return { label: "normal", color: "text-emerald-400" };
+      }
+      case "temperature": {
+        const temp = Number(value);
+        if (temp < 95 || temp > 103) return { label: "risky", color: "text-red-400" };
+        if (temp < 97 || temp > 99.5) return { label: "moderate", color: "text-yellow-300" };
+        return { label: "normal", color: "text-emerald-400" };
+      }
+      case "bloodPressure": {
+        const { systolic, diastolic } = parseBloodPressure(value);
+        if (!systolic || !diastolic) return { label: "unknown", color: "text-gray-400" };
+        if (systolic >= 180 || diastolic >= 120) return { label: "risky", color: "text-red-400" };
+        if (systolic >= 140 || diastolic >= 90) return { label: "moderate", color: "text-yellow-300" };
+        if (systolic < 90 || diastolic < 60) return { label: "moderate", color: "text-yellow-300" };
+        return { label: "normal", color: "text-emerald-400" };
+      }
+      case "oxygenLevel": {
+        const oxygen = Number(value);
+        if (oxygen < 90) return { label: "risky", color: "text-red-400" };
+        if (oxygen < 95) return { label: "moderate", color: "text-yellow-300" };
+        return { label: "normal", color: "text-emerald-400" };
+      }
+      default:
+        return { label: "unknown", color: "text-gray-400" };
+    }
+  };
+
+  const heartRateStatus = getVitalStatus("heartRate", userData?.user?.heartRate);
+  const temperatureStatus = getVitalStatus("temperature", userData?.user?.temperature);
+  const bloodPressureStatus = getVitalStatus("bloodPressure", userData?.user?.bloodPressure);
+  const oxygenStatus = getVitalStatus("oxygenLevel", userData?.user?.oxygenLevel);
+
   const vitalStats = [
     {
       icon: Heart,
       label: "Heart Rate",
-      value: (userData?.user?.heartRate ? userData?.user?.heartRate + " bpm" : 72 + " bpm"),
-      status: "normal",
-      color: "text-rose-500",
+      value: userData?.user?.heartRate ? `${userData.user.heartRate} bpm` : "72 bpm",
+      status: heartRateStatus.label,
+      color: heartRateStatus.color,
     },
     {
       icon: Thermometer,
       label: "Temperature",
-      value: (userData?.user?.temperature ? userData?.user?.temperature + " °F" : 98.6 + " °F"),
-      status: "normal",
-      color: "text-cyan-400",
+      value: userData?.user?.temperature ? `${userData.user.temperature} °F` : "98.6 °F",
+      status: temperatureStatus.label,
+      color: temperatureStatus.color,
     },
     {
       icon: Weight,
       label: "Blood Pressure",
-      value: (userData?.user?.bloodPressure ? userData?.user?.bloodPressure + " mmHg" : "120/80 mmHg"),
-      status: "normal",
-      color: "text-purple-400",
+      value: userData?.user?.bloodPressure ? `${userData.user.bloodPressure} mmHg` : "120/80 mmHg",
+      status: bloodPressureStatus.label,
+      color: bloodPressureStatus.color,
     },
     {
       icon: Activity,
       label: "Oxygen Level",
-      value: (userData?.user?.oxygenLevel ? userData?.user?.oxygenLevel + "%" : "98%"),
-      status: "normal",
-      color: "text-blue-400",
+      value: userData?.user?.oxygenLevel ? `${userData.user.oxygenLevel}%` : "98%",
+      status: oxygenStatus.label,
+      color: oxygenStatus.color,
     },
   ];
 

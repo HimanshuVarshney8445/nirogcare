@@ -13,12 +13,24 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const DiagnosisForm = ({ patient, onClose, onSubmit, doctorId, hospitalId }) => {
+const DiagnosisForm = ({ patient, onClose, onSubmit }) => {
+  const getPatientId = () => {
+    return (
+      patient?.patientId?._id ||
+      patient?.patientId ||
+      patient?.bookedBy?._id ||
+      ""
+    );
+  };
+
+  const getHospitalId = () => {
+    return patient?.hospitalId?._id || patient?.hospitalId || "";
+  };
+
   const [formData, setFormData] = useState({
-    patientId: patient?.bookedBy?._id ,
+    patientId: getPatientId(),
     appointmentId: patient?._id,
-    hospitalId : hospitalId?.hospitalId,
-    doctorId: doctorId?.doctorId?._id,
+    hospitalId: getHospitalId(),
     medicines: [
       {
         name: '',
