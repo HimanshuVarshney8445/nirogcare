@@ -1,7 +1,10 @@
 // controllers/assistantController.js
+import mongoose from "mongoose";
 import { Assistant } from "../models/Assistant.js";
 import { Hospital } from "../models/Hospital.js";
 import { Doctor } from "../models/Doctor.js";
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const registerAssistant = async (req, res) => {
   const userId = req.user?.id;
@@ -12,24 +15,44 @@ export const registerAssistant = async (req, res) => {
       .json({ success: false, message: "Unauthorized: user ID not found" });
   }
 
-  const { hospitalId, doctorId } = req.body;
+  const { hospitalLicense, doctorLicense, hospitalId, doctorId } = req.body;
+  const hospitalIdentifier = (hospitalLicense || hospitalId || "").toString().trim();
+  const doctorIdentifier = (doctorLicense || doctorId || "").toString().trim();
 
-  if (!hospitalId || !doctorId) {
+  if (!hospitalIdentifier || !doctorIdentifier) {
     return res.status(400).json({
       success: false,
-      message: "Hospital ID and Doctor ID are required",
+      message: "Hospital license number and Doctor license number are required",
     });
   }
 
   try {
-    // Optional: Validate hospital and doctor existence
-    const hospitalExists = await Hospital.findById(hospitalId);
-    const doctorExists = await Doctor.findById(doctorId);
+    // Validate hospital and doctor existence using license numbers first, but allow existing ObjectId values for compatibility
+    let hospitalExists = null;
+    if (mongoose.Types.ObjectId.isValid(hospitalIdentifier)) {
+      hospitalExists = await Hospital.findById(hospitalIdentifier);
+    }
+    if (!hospitalExists) {
+      hospitalExists = await Hospital.findOne({
+        licenseNumber: { $regex: `^${escapeRegex(hospitalIdentifier)}$`, $options: 'i' },
+      });
+    }
+
+    let doctorExists = null;
+    if (mongoose.Types.ObjectId.isValid(doctorIdentifier)) {
+      doctorExists = await Doctor.findById(doctorIdentifier);
+    }
+    if (!doctorExists) {
+      doctorExists = await Doctor.findOne({
+        licenseNumber: { $regex: `^${escapeRegex(doctorIdentifier)}$`, $options: 'i' },
+      });
+    }
 
     if (!hospitalExists || !doctorExists) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Hospital or Doctor not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Hospital or Doctor not found for the provided license numbers",
+      });
     }
 
     // Check if already exists
@@ -37,30 +60,66 @@ export const registerAssistant = async (req, res) => {
 
     if (assistant) {
       // Optional: update hospital/doctor if re-registering
-      assistant.hospitalId = hospitalId;
-      assistant.doctorId = doctorId;
-      await assistant.save();
+      assistant.hospitalId = hospitalExists._id;
+      assistant.doctorId = doctorExists._id;
+      const savedAssistant = await assistant.save();
+
+      const populatedAssistant = await Assistant.findById(savedAssistant._id)
+        .populate({
+          path: 'doctorId',
+          populate: { path: 'userId', model: 'User', select: 'name email' },
+          select: 'specialization gender userId licenseNumber',
+        })
+        .populate({ path: 'hospitalId', select: 'name address phone licenseNumber' });
+
+      if (!populatedAssistant) {
+        return res.status(500).json({
+          success: false,
+          message: 'Assistant profile could not be loaded after update',
+        });
+      }
 
       return res.status(200).json({
         success: true,
         message: "Assistant profile updated",
-        assistant,
+        assistant: populatedAssistant,
       });
     }
 
     // Create new assistant
     const newAssistant = new Assistant({
       userId,
-      hospitalId,
-      doctorId,
+      hospitalId: hospitalExists._id,
+      doctorId: doctorExists._id,
     });
 
-    await newAssistant.save();
+    const savedAssistant = await newAssistant.save();
+    if (!savedAssistant || !savedAssistant._id) {
+      return res.status(500).json({
+        success: false,
+        message: 'Assistant could not be saved',
+      });
+    }
+
+    const populatedAssistant = await Assistant.findById(savedAssistant._id)
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', model: 'User', select: 'name email' },
+        select: 'specialization gender userId licenseNumber',
+      })
+      .populate({ path: 'hospitalId', select: 'name address phone licenseNumber' });
+
+    if (!populatedAssistant) {
+      return res.status(500).json({
+        success: false,
+        message: 'Assistant was saved but could not be loaded',
+      });
+    }
 
     res.status(201).json({
       success: true,
       message: "Assistant registered successfully",
-      assistant: newAssistant,
+      assistant: populatedAssistant,
     });
   } catch (error) {
     console.error("Assistant Registration Error:", error);

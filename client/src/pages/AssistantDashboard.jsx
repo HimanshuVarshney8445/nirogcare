@@ -554,7 +554,26 @@ const AssistantDashboard = () => {
                 userData={userData}
               />
             ) : (
-              <AssistantForm />
+              <AssistantForm onSuccess={async (assistant) => {
+                if (assistant) {
+                  setAssistantData({ success: true, assistant });
+                  setToggle(true);
+                  return;
+                }
+
+                setLoading(true);
+                try {
+                  const profileResponse = await getAssistantProfile();
+                  if (profileResponse?.success) {
+                    setAssistantData(profileResponse);
+                    setToggle(true);
+                  }
+                } catch (err) {
+                  console.error('Unable to reload assistant profile after creation:', err);
+                } finally {
+                  setLoading(false);
+                }
+              }} />
             )}
           </div>
         );

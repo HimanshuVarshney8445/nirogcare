@@ -3,14 +3,14 @@ import { User, Building2, UserPlus, CheckCircle, AlertCircle, Stethoscope, Save 
 import { updateAssistantProfile } from '../services/assistantServices';
 import { toast } from 'sonner';
 
-
-const AssistantForm = () => {
+const AssistantForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
-    doctorId: '',
-    hospitalId: ''
+    doctorLicense: '',
+    hospitalLicense: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [message, setMessage] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -25,23 +25,34 @@ const AssistantForm = () => {
     
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setMessage('');
 
     try {
       const response = await updateAssistantProfile(formData);
-      if(response?.success){
-        toast.success("Profile Updated Successfully !!")
-        console.log(response)
-
+      if (response?.success && response?.assistant) {
+        setSubmitStatus('success');
+        setMessage(response.message || 'Assistant created successfully');
+        toast.success(response.message || 'Profile Updated Successfully !!');
+        if (onSuccess) {
+          onSuccess(response.assistant);
+        }
+      } else if (response?.success && !response?.assistant) {
+        setSubmitStatus('error');
+        setMessage('Assistant created but no profile data was returned.');
+      } else {
+        setSubmitStatus('error');
+        setMessage(response.message || 'Failed to create assistant. Please try again.');
       }
     } catch (error) {
       setSubmitStatus('error');
+      setMessage(error.message || 'Failed to create assistant. Please try again.');
       console.error('Error creating assistant:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid = formData.doctorId && formData.hospitalId;
+  const isFormValid = formData.doctorLicense.trim() && formData.hospitalLicense.trim();
 
   return (
     <div className=" flex items-center justify-center   ">
@@ -72,9 +83,7 @@ const AssistantForm = () => {
               ) : (
                 <AlertCircle className="w-5 h-5 mr-3 text-red-400" />
               )}
-              {submitStatus === 'success' 
-                ? 'Assistant created successfully!' 
-                : 'Failed to create assistant. Please try again.'}
+              <span>{message || (submitStatus === 'success' ? 'Assistant created successfully!' : 'Failed to create assistant. Please try again.')}</span>
             </div>
           )}
 
@@ -86,16 +95,16 @@ const AssistantForm = () => {
             <div className="group  mb-10">
               <label className="mb-4 flex items-center text-sm font-medium text-gray-300  group-hover:text-green-400 transition-colors">
                 <Stethoscope className="w-4 h-4 mr-2 text-green-400" />
-                Doctor ID
+                Doctor License Number
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  name="doctorId"
-                  value={formData.doctorId}
+                  name="doctorLicense"
+                  value={formData.doctorLicense}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 text-white placeholder-gray-400 transition-all duration-300 hover:border-green-500/30 backdrop-blur-sm"
-                  placeholder="Enter doctor ID"
+                  placeholder="Enter doctor license number"
                   required
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -106,16 +115,16 @@ const AssistantForm = () => {
             <div className="group">
               <label className="flex items-center text-sm font-medium text-gray-300 mb-4 group-hover:text-green-400 transition-colors">
                 <Building2 className="w-4 h-4 mr-2 text-green-400" />
-                Hospital ID
+                Hospital License Number
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  name="hospitalId"
-                  value={formData.hospitalId}
+                  name="hospitalLicense"
+                  value={formData.hospitalLicense}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 text-white placeholder-gray-400 transition-all duration-300 hover:border-green-500/30 backdrop-blur-sm"
-                  placeholder="Enter hospital ID"
+                  placeholder="Enter hospital license number"
                   required
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
