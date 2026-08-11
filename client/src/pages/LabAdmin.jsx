@@ -34,6 +34,7 @@ import LabRegistration from '../component/LabRegistration';
 import LabProfileView from '../component/LabProfile';
 import { getAllLabAppointmentbyLab } from '../services/labServices';
 import UploadReportForm from '../component/UploadReportForm';
+import RecentAdmissions from '../component/RecentAdmissions';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ size = "w-6 h-6", className = "" }) => (
@@ -81,20 +82,37 @@ const LabDashboard = () => {
   const [labData, setLabData] = useState(null);
   const [toggle, setToggle] = useState(false);
   const [totalAppointments, setTotalAppointments] = useState([]);
+  const [todayAppointments, setTodayAppointments] = useState([]);
   const navigate = useNavigate();
+
+  const normalizeAppointments = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.appointments)) return payload.appointments;
+    if (Array.isArray(payload?.data?.appointments)) return payload.data.appointments;
+    return [];
+  };
+
+  const normalizeCount = (payload) => {
+    const count = payload?.count ?? payload?.data?.count;
+    return Number.isFinite(Number(count)) ? Number(count) : 0;
+  };
 
   const loadLabProfile = async () => {
     setLabLoading(true);
     try {
       const data = await getLabProfile();
-      if(data){
+      if(data && data.lab){
         setToggle(true);
         setLabData(data.lab);
         setLabId(data.lab?._id);
+      } else {
+        setToggle(false);
+        setLabData(null);
       }
     } catch (error) {
       console.error("Error loading lab profile:", error);
       setLabData(null);
+      setToggle(false);
     } finally {
       setLabLoading(false);
     }
@@ -108,14 +126,23 @@ const LabDashboard = () => {
     setAppointmentsLoading(true);
     try {
       const response = await getAllLabAppointmentbyLab(labData?._id);
-      if(response){
-        setTotalAppointments(response.appointments);
-      }
+      setTotalAppointments(normalizeAppointments(response));
     } catch (error) {
       console.error("Error fetching lab appointments:", error);
       toast.error("Failed to load appointments");
     } finally {
       setAppointmentsLoading(false);
+    }
+  };
+
+  const fetchTodayAppointments = async () => {
+    if (!labId) return;
+    try {
+      const appointmentsForToday = await getTodayLabAppointments(labId);
+      setTodayAppointments(normalizeAppointments(appointmentsForToday));
+    } catch (error) {
+      console.error("Error fetching today's appointments:", error);
+      setTodayAppointments([]);
     }
   };
 
@@ -143,7 +170,7 @@ const LabDashboard = () => {
       setStatsLoading(true);
       try {
         const response = await getTodayLabAppointmentCount();
-        setTotalPatientsToday(response.count);
+        setTotalPatientsToday(normalizeCount(response));
       } catch (error) {
         console.error("Error fetching today's count:", error);
         setTotalPatientsToday(0);
@@ -155,22 +182,14 @@ const LabDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!labId) return;
-    async function fetchData() {
-      try {
-        const appointmentsForToday = await getTodayLabAppointments(labId);
-        setTotalAppointments(appointmentsForToday || []);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setTotalAppointments([]);
-      }
-    }
-    fetchData();
+    fetchTodayAppointments();
   }, [labId]);
 
+  const safeAppointments = Array.isArray(totalAppointments) ? totalAppointments : [];
+
   const filtered = !search.trim()
-    ? totalAppointments
-    : totalAppointments.filter(appt =>
+    ? safeAppointments
+    : safeAppointments.filter(appt =>
         (appt.bookedBy?.name || "")
           .toLowerCase()
           .includes(search.toLowerCase().trim())
@@ -183,6 +202,9 @@ const LabDashboard = () => {
     { id: 'Send Reports', label: 'Send Reports', icon: FlaskConical },
     { id: 'Update Profile', label : 'Update Profile' , icon : Settings}
   ];
+
+  const safeToday = Array.isArray(todayAppointments) ? todayAppointments : [];
+  const completedCount = safeAppointments.filter(a => a.status === 'Completed').length || safeToday.filter(a => a.status === 'Completed').length;
 
   const labStats = [
     { 
@@ -212,10 +234,10 @@ const LabDashboard = () => {
     { 
       icon: Activity, 
       label: 'Report Submitted', 
-      value: '0', 
+      value: completedCount, 
       change: '+0', 
       color: 'text-red-400',
-      loading: false // Set to true if you have API for this
+      loading: false
     },
   ];
 
@@ -249,7 +271,7 @@ const LabDashboard = () => {
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RecentAdmissions totalAppointments={totalAppointments} />
+              <RecentAdmissions totalAppointments={todayAppointments} />
 
               <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
                 <h3 className="text-xl font-semibold text-white mb-4">Emergency Alerts</h3>
@@ -419,8 +441,15 @@ const LabDashboard = () => {
                     {selectedAppointment.bookedBy?.name || "Unknown"} - {selectedAppointment.testDetails?.testName || "N/A"}
                   </p>
                 </div>
-                {/* Add your UploadReportForm component here */}
-                <UploadReportForm appointment={selectedAppointment} />
+                <UploadReportForm
+                  appointment={selectedAppointment}
+                  onUploadSuccess={() => {
+                    getAllLabAppointment();
+                    fetchTodayAppointments();
+                    setSelectedAppointment(null);
+                    setActiveTab('patients');
+                  }}
+                />
               </div>
             )}
           </div>

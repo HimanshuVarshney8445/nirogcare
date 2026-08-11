@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import {useSearchParams} from "react-router-dom";
 import {
   Home,
   Users,
@@ -30,7 +31,13 @@ import { VitalSignsForm } from "../component/VitalStats";
 
 const AssistantDashboard = () => {
   const [toggleSideBar, setToggleSideBar] = useState(false);
-  const [activeTab, setActiveTab] = useState("home");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+    const activeTab = searchParams.get("tab") || "home";
+  
+    const handleTabChange = (tab) => {
+      setSearchParams({ tab });
+    };
 
   const [draggedPatient, setDraggedPatient] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -682,7 +689,7 @@ const AssistantDashboard = () => {
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center ${
                     toggleSideBar ? "space-x-3" : "justify-center"
                   } cursor-pointer p-3 rounded-lg relative ${

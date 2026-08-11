@@ -27,29 +27,30 @@ export const bookLabAppointment = async (req, res) => {
       return res.status(400).json({ error: "All required fields must be filled." });
     }
 
-      const appointmentData = {
-        forPatientType,
-        labId,
-        testDetails,
-        scheduledDate,
-        timeSlot,
-        notes,
-        doctorReference,
-      };
+    const appointmentData = {
+      forPatientType,
+      labId,
+      testDetails,
+      scheduledDate,
+      timeSlot,
+      notes,
+    };
 
-      if (req.user?.id) appointmentData.bookedBy = req.user.id;
-      if (req.body.bookedBy) appointmentData.bookedBy = req.body.bookedBy;
+    if (doctorReference) appointmentData.doctorReference = doctorReference;
+    if (req.user?.id) appointmentData.bookedBy = req.user.id;
+    if (req.body.bookedBy) appointmentData.bookedBy = req.body.bookedBy;
 
-      const appointment = new LabAppointment(appointmentData);
+    const appointment = new LabAppointment(appointmentData);
     const saved = await appointment.save();
 
     res.status(201).json({
+      success: true,
       message: "Lab appointment booked successfully.",
       appointment: saved,
     });
   } catch (err) {
     console.error("Booking Error:", err);
-    res.status(500).json({ error: "Server error while booking appointment." });
+    res.status(500).json({ error: err.message || "Server error while booking appointment." });
   }
 };
 
@@ -147,7 +148,7 @@ export const uploadReportForAppointment = async (req, res) => {
 
     const appointment = await LabAppointment.findOneAndUpdate(
       { _id: id, labId: lab._id },
-      { reportPDF },
+      { reportPDF, status: "Completed" },
       { new: true }
     );
 

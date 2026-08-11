@@ -193,6 +193,8 @@ export const addMedicineRecord = async (req, res) => {
 
     await record.save();
 
+    await Appointment.findByIdAndUpdate(appointmentId, { status: "completed" });
+
     res.status(201).json({
       message: "Medicine record saved successfully.",
       record,
@@ -327,9 +329,32 @@ export const allTodaysAppointment = async(req,res)=>{
     const doctorId = doctor._id;
     const hospitalId = doctor.hospitalId;
 
+    let dateFilter = {};
+    const targetDateStr = req.query.date;
+    if (targetDateStr) {
+      const d = new Date(targetDateStr);
+      const year = d.getUTCFullYear();
+      const month = d.getUTCMonth();
+      const day = d.getUTCDate();
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+      dateFilter = { date: { $gte: startOfDay, $lte: endOfDay } };
+    } else {
+      const now = new Date();
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istNow = new Date(now.getTime() + istOffset);
+      const year = istNow.getUTCFullYear();
+      const month = istNow.getUTCMonth();
+      const day = istNow.getUTCDate();
+      const istStart = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const istEnd = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+      dateFilter = { date: { $gte: istStart, $lte: istEnd } };
+    }
+
     const appointments = await Appointment.find({
       doctorId,
       hospitalId,
+      ...dateFilter,
       status: { $ne: "cancelled" },
     })
       .populate({
@@ -347,15 +372,15 @@ export const allTodaysAppointment = async(req,res)=>{
 
     return res.status(200).json({
       success: true,
-      message: "All appointments fetched successfully.",
+      message: "Appointments fetched successfully.",
       total: appointments.length,
       appointments,
     });
 
   } catch (error) {
-    console.error("Error fetching all appointments:", error);
+    console.error("Error fetching appointments:", error);
     return res.status(500).json({
-      error: "Server error while fetching all appointments."
+      error: "Server error while fetching appointments."
     });
   }
 
@@ -379,7 +404,7 @@ export const allTodaysOnlineAppointment = async(req,res)=>{
     const appointments = await Appointment.find({
       doctorId,
       hospitalId,
-      status: "booked",
+      status: { $ne: "cancelled" },
       mode : "online"
     })
       .populate({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import {useSearchParams} from "react-router-dom";
 import { 
   Home, 
   Users, 
@@ -30,7 +31,14 @@ import VideoCall from '../component/VideoCall';
 import DoctorOnlinePatients from '../component/DoctorOnlinePatients';
 
 const DoctorDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "home";
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab });
+  };
+  
   const [notifications] = useState(3);
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [doctorDetails, setDoctorDetails] = useState(null);
@@ -409,9 +417,6 @@ const DoctorDashboard = () => {
 
             <DoctorOnlinePatients onlineAppointments={onlineAppointments} name = {doctorInfo.name}/>
 
-          
-
-              
             </div>
           </div>
         );
@@ -421,14 +426,16 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex">
+     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`${toggleSideBar ? "w-64" : "w-20"} transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm overflow-hidden`}
-      >
+  className={`${
+    toggleSideBar ? "w-64" : "w-20"
+  } h-screen flex-shrink-0 min-w-0 transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm overflow-x-hidden overflow-y-auto`}
+>
         <div className="p-4 border-b border-gray-700/50">
-          <div className="flex mt-0.5 items-center justify-between">
-            <div className="flex items-center space-x-3 group">
+          <div className="flex mt-0.5 items-center justify-between min-w-0">
+            <div className="flex items-center space-x-3 group min-w-0">
               {toggleSideBar && (
                 <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
                   <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
@@ -441,9 +448,9 @@ const DoctorDashboard = () => {
               )}
 
               {toggleSideBar && (
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
-                  NirogCare
-                </h1>
+                <h1 className="text-2xl font-bold whitespace-nowrap bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
+  NirogCare
+</h1>
               )}
             </div>
             <PanelLeft
@@ -456,12 +463,12 @@ const DoctorDashboard = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 min-w-0 p-4 overflow-x-hidden">
           <ul className="space-y-2">
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center ${
                     toggleSideBar ? "space-x-3" : "justify-center"
                   } cursor-pointer p-3 rounded-lg relative ${
@@ -504,7 +511,7 @@ const DoctorDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         {activeTab === 'home' ? (<header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between">

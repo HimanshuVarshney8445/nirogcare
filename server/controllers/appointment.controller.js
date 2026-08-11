@@ -1,6 +1,21 @@
 import { Appointment } from "../models/Appointment.js";
 import {Patient} from "../models/Patient.js"
 import { Assistant } from "../models/Assistant.js";
+import { Doctor } from "../models/Doctor.js";
+
+const markPastAppointmentsCompleted = async (bookedBy) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  return Appointment.updateMany(
+    {
+      ...(bookedBy ? { bookedBy } : {}),
+      status: { $nin: ["cancelled", "completed"] },
+      date: { $lt: startOfToday },
+    },
+    { $set: { status: "completed" } }
+  );
+};
 
 // Create a new appointment
 export const createAppointment = async (req, res) => {
@@ -49,6 +64,8 @@ export const createAppointment = async (req, res) => {
 
 export const getMyAppointments = async (req, res) => {
   try {
+    await markPastAppointmentsCompleted(req.user.id);
+
     const appointments = await Appointment.find({ bookedBy: req.user.id })
       .populate({
         path: "doctorId",
@@ -170,6 +187,8 @@ export const updateAppointmentStatus = async (req, res) => {
 
 export const getMyOnlineAppointments = async (req, res) => {
   try {
+    await markPastAppointmentsCompleted(req.user.id);
+
     const appointments = await Appointment.find({ bookedBy: req.user.id , mode : 'online' })
       .populate({
         path: "doctorId",

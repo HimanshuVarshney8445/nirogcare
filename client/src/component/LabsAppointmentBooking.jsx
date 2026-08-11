@@ -70,25 +70,15 @@ const LabAppointmentBooking = ({ labs = []}) => {
 
 
       const response = await createAppointmentLab(appointmentData);
-      if(response?.success){
-        toast.success("Lab Book Successfully 🧪")
-        console.log(response)
+      if (response?.success || response?.appointment || response?.message) {
+        toast.success("Lab Test Booked Successfully! 🧪");
+        handleBack();
+      } else {
+        toast.error("Failed to book appointment. Please try again.");
       }
-
-      // Uncomment and implement your API call here
-      // const response = await bookLabAppointment(appointmentData);
-      // if (response.success) {
-      //   alert('Lab test booked successfully!');
-      //   handleBack();
-      // } else {
-      //   alert('Failed to book appointment. Please try again.');
-      // }
-
-      alert('Lab test booked successfully!');
-      handleBack();
     } catch (error) {
       console.error('Error booking appointment:', error);
-      alert('Failed to book appointment. Please try again.');
+      toast.error(error?.message || 'Failed to book appointment. Please try again.');
     }
   };
 

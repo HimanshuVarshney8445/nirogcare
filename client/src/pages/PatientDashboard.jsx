@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams} from "react-router-dom";
 import {
   getAllNearbyHospitals,
   getAllNearbyLabs,
@@ -56,7 +57,13 @@ import LiveComponentPatient from "../component/LiveComponentPatient";
 const PatientDashboard = () => {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState("home");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "home";
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab });
+  };
   const [notifications] = useState(3);
   const [hospitals, setHospitals] = useState([]);
   const [labs, setLabs] = useState([]);
@@ -95,35 +102,51 @@ const PatientDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        const [userRes, appointmentRes, labAppointmentRes] = await Promise.all([
-          getMe(),
-          getMyAppointment(),
-          getMyLabAppointment(),
-        ]);
+  const fetchAllData = async () => {
+    setLoading(true);
 
-        if (userRes) {
-          setUserData(userRes);
-          console.log(userRes);
-        }
-        if (appointmentRes) {
-          setAppointment(appointmentRes?.appointments || []);
-          console.log(appointmentRes)
-        }
-        if (labAppointmentRes) setLabAppointment(labAppointmentRes || []);
-      } catch (error) {
-        console.log("Error fetching dashboard data", error);
-      } finally {
-        setLoading(false);
+    try {
+      const [
+        userRes,
+        appointmentRes,
+        labAppointmentRes,
+      ] = await Promise.all([
+        getMe(),
+        getMyAppointment(),
+        getMyLabAppointment(),
+      ]);
+
+      // User data
+      if (userRes) {
+        setUserData(userRes);
       }
-    };
 
-    if (activeTab === "home") {
-      fetchAllData();
+      // Doctor appointments
+      if (appointmentRes) {
+        setAppointment(
+          appointmentRes?.appointments || []
+        );
+      }
+
+      // Lab appointments
+      if (labAppointmentRes) {
+        setLabAppointment(
+          labAppointmentRes || []
+        );
+      }
+
+    } catch (error) {
+      console.log(
+        "Error fetching dashboard data",
+        error
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [activeTab]);
+  };
+
+  fetchAllData();
+}, []);
 
   const handleLogout = async () => {
     const response = await logoutUser();
@@ -358,6 +381,35 @@ const PatientDashboard = () => {
     },
   ];
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const upcomingAppointments = appointment.filter((appt) => {
+    if (!appt?.date) return false;
+
+    const appointmentDate = new Date(appt.date);
+    if (Number.isNaN(appointmentDate.getTime())) return false;
+
+    return (
+      appt.status !== "completed" &&
+      appt.status !== "cancelled" &&
+      appointmentDate >= todayStart
+    );
+  });
+
+  const upcomingLabAppointments = labAppointments.filter((appt) => {
+    if (!appt?.scheduledDate) return false;
+
+    const appointmentDate = new Date(appt.scheduledDate);
+    if (Number.isNaN(appointmentDate.getTime())) return false;
+
+    return (
+      appt.status !== "Completed" &&
+      appt.status !== "Cancelled" &&
+      appointmentDate >= todayStart
+    );
+  });
+
 
 
   const renderContent = () => {
@@ -407,74 +459,77 @@ const PatientDashboard = () => {
                 </div>
                 <button
                   className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors hover:scale-105 transform duration-200"
-                  onClick={() => setActiveTab("appointment")}
+                  onClick={() => handleTabChange("appointment")}
                 >
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
               <div className="space-y-3">
-                {appointment.map((appt, index) => (
-                  <div
-                    key={index}
-                    className="bg-gradient-to-r from-slate-800/40 to-slate-700/20 p-4 rounded-lg border border-slate-600/20 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <User className="w-4 h-4 text-blue-400" />
-                          <h4 className="font-medium text-slate-100">
-                            {appt?.doctorId?.userId?.name || "Doctor Name"}
-                          </h4>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Stethoscope className="w-4 h-4 text-pink-800" />
-                          <p className="text-slate-300 text-sm">
-                            {appt?.doctorId?.specialization || "Specialization"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-emerald-600" />
-                          <p className="text-slate-400 text-xs">
-                            {appt?.hospitalId?.name || "Hospital"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center justify-end gap-2 mb-1">
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/20">
-                            <Globe className="w-4 h-4 text-emerald-400" />
-                            <span className="text-sm font-semibold text-emerald-300 capitalize">
-                              {appt.mode}
-                            </span>
+                {upcomingAppointments.length === 0 ? (
+                  <p className="text-slate-400 text-sm">No upcoming appointments.</p>
+                ) : (
+                  upcomingAppointments.map((appt, index) => (
+                    <div
+                      key={index}
+                      className="bg-gradient-to-r from-slate-800/40 to-slate-700/20 p-4 rounded-lg border border-slate-600/20 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <User className="w-4 h-4 text-blue-400" />
+                            <h4 className="font-medium text-slate-100">
+                              {appt?.doctorId?.userId?.name || "Doctor Name"}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Stethoscope className="w-4 h-4 text-pink-800" />
+                            <p className="text-slate-300 text-sm">
+                              {appt?.doctorId?.specialization || "Specialization"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-emerald-600" />
+                            <p className="text-slate-400 text-xs">
+                              {appt?.hospitalId?.name || "Hospital"}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 justify-end mb-1">
-                          <Calendar className="w-4 h-4 text-blue-400" />
-                          <p className="text-blue-400 font-medium">
-                            {appt.date
-                              ? new Date(appt.date).toLocaleDateString(
-                                "en-US",
-                                {
-                                  weekday: "short",
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )
-                              : "Date"}
-                          </p>
-                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-2 mb-1">
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/20">
+                              <Globe className="w-4 h-4 text-emerald-400" />
+                              <span className="text-sm font-semibold text-emerald-300 capitalize">
+                                {appt.mode}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 justify-end mb-1">
+                            <Calendar className="w-4 h-4 text-blue-400" />
+                            <p className="text-blue-400 font-medium">
+                              {appt.date
+                                ? new Date(appt.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                  }
+                                )
+                                : "Date"}
+                            </p>
+                          </div>
 
-                        <div className="flex items-center gap-2 justify-end">
-                          <Clock className="w-4 h-4 text-slate-400" />
-                          <p className="text-slate-300 text-sm">
-                            {appt.timeSlot || "Time"}
-                          </p>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <p className="text-slate-300 text-sm">
+                              {appt.timeSlot || "Time"}
+                            </p>
+                          </div>
                         </div>
-
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -488,91 +543,95 @@ const PatientDashboard = () => {
                 </div>
                 <button
                   className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors hover:scale-105 transform duration-200"
-                  onClick={() => setActiveTab("lab")}
+                  onClick={() => handleTabChange("lab")}
                 >
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
               <div className="space-y-3">
-                {labAppointments.map((appointment) => (
-                  <div
-                    key={appointment._id}
-                    className="bg-gradient-to-r from-slate-800/40 to-slate-700/20 p-4 rounded-lg border border-slate-600/20 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <FlaskConical className="w-4 h-4 text-emerald-400" />
-                          <h4 className="font-medium text-slate-100">
-                            {appointment?.testDetails?.testName || "Test Name"}
-                          </h4>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Activity className="w-4 h-4 text-purple-400" />
-                          <p className="text-slate-300 text-sm">
-                            {appointment?.testDetails?.testType || "Test Type"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="w-4 h-4 text-blue-400" />
-                          <p className="text-slate-400 text-xs">
-                            {appointment?.labId?.name || "Lab Name"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-orange-500" />
-                          <p className="text-slate-400 text-xs">
-                            {appointment?.labId?.address || "Lab Address"}
-                          </p>
-                        </div>
-                        {appointment?.notes && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <FileText className="w-4 h-4 text-yellow-400" />
-                            <p className="text-slate-400 text-xs">
-                              Note: {appointment.notes}
+                {upcomingLabAppointments.length === 0 ? (
+                  <p className="text-slate-400 text-sm">No upcoming lab appointments.</p>
+                ) : (
+                  upcomingLabAppointments.map((appointment) => (
+                    <div
+                      key={appointment._id}
+                      className="bg-gradient-to-r from-slate-800/40 to-slate-700/20 p-4 rounded-lg border border-slate-600/20 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <FlaskConical className="w-4 h-4 text-emerald-400" />
+                            <h4 className="font-medium text-slate-100">
+                              {appointment?.testDetails?.testName || "Test Name"}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Activity className="w-4 h-4 text-purple-400" />
+                            <p className="text-slate-300 text-sm">
+                              {appointment?.testDetails?.testType || "Test Type"}
                             </p>
                           </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 justify-end mb-1">
-                          <Calendar className="w-4 h-4 text-blue-400" />
-                          <p className="text-blue-400 font-medium">
-                            {appointment.scheduledDate
-                              ? new Date(
-                                appointment.scheduledDate
-                              ).toLocaleDateString("en-US", {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                              })
-                              : "Date"}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Building2 className="w-4 h-4 text-blue-400" />
+                            <p className="text-slate-400 text-xs">
+                              {appointment?.labId?.name || "Lab Name"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-orange-500" />
+                            <p className="text-slate-400 text-xs">
+                              {appointment?.labId?.address || "Lab Address"}
+                            </p>
+                          </div>
+                          {appointment?.notes && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <FileText className="w-4 h-4 text-yellow-400" />
+                              <p className="text-slate-400 text-xs">
+                                Note: {appointment.notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 justify-end mb-2">
-                          <Clock className="w-4 h-4 text-slate-400" />
-                          <p className="text-slate-300 text-sm">
-                            {appointment.timeSlot || "Time"}
-                          </p>
-                        </div>
-                        <div className="flex justify-end">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Completed"
-                                ? "bg-green-400/20 text-green-400"
-                                : appointment.status === "Pending"
-                                  ? "bg-yellow-400/20 text-yellow-400"
-                                  : appointment.status === "Cancelled"
-                                    ? "bg-red-400/20 text-red-400"
-                                    : "bg-blue-400/20 text-blue-400"
-                              }`}
-                          >
-                            {appointment.status}
-                          </span>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 justify-end mb-1">
+                            <Calendar className="w-4 h-4 text-blue-400" />
+                            <p className="text-blue-400 font-medium">
+                              {appointment.scheduledDate
+                                ? new Date(
+                                  appointment.scheduledDate
+                                ).toLocaleDateString("en-US", {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                                : "Date"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 justify-end mb-2">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <p className="text-slate-300 text-sm">
+                              {appointment.timeSlot || "Time"}
+                            </p>
+                          </div>
+                          <div className="flex justify-end">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Completed"
+                                  ? "bg-green-400/20 text-green-400"
+                                  : appointment.status === "Pending"
+                                    ? "bg-yellow-400/20 text-yellow-400"
+                                    : appointment.status === "Cancelled"
+                                      ? "bg-red-400/20 text-red-400"
+                                      : "bg-blue-400/20 text-blue-400"
+                                }`}
+                            >
+                              {appointment.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -668,7 +727,7 @@ const PatientDashboard = () => {
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
                     } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
@@ -756,7 +815,7 @@ const PatientDashboard = () => {
                   <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center">
                     <button
                       className="cursor-pointer"
-                      onClick={() => setActiveTab("profile")}
+                      onClick={() => handleTabChange("profile")}
                     >
                       <User className="w-4 h-4 text-white" />
                     </button>

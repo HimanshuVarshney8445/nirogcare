@@ -1,10 +1,11 @@
 export default function RecentAdmissions({ totalAppointments }) {
+  const appointments = Array.isArray(totalAppointments) ? totalAppointments : [];
 
   return (
     <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
       <h3 className="text-xl font-semibold text-white mb-4">Recent Admissions</h3>
       <div className="space-y-3">
-        {totalAppointments.map((appt) => (
+        {appointments.map((appt) => (
           <div key={appt._id} className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30">
             <div className="flex items-center justify-between">
               <div>
@@ -25,7 +26,7 @@ export default function RecentAdmissions({ totalAppointments }) {
             </div>
           </div>
         ))}
-        {totalAppointments.length === 0 && (
+        {appointments.length === 0 && (
           <div className="text-gray-400 text-center">No admissions today.</div>
         )}
       </div>

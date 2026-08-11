@@ -26,8 +26,8 @@ const labAppointmentSchema = new mongoose.Schema(
       },
       testType: {
         type: String,
-        enum: ["Blood", "X-Ray", "MRI", "CT Scan", "Urine", "Other"],
         required: true,
+        trim: true,
       },
     },
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Home,
   Users,
@@ -38,7 +39,13 @@ import { getAllAssistantsForHospital } from '../services/hospitalsServices';
 import AllAssistants from '../component/AllAssistants';
 
 const HospitalDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "home";
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab });
+  };
   const [notifications] = useState(5);
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [hospitalProfile, setHospitalProfile] = useState(null);
@@ -504,7 +511,7 @@ const HospitalDashboard = () => {
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
                     } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"

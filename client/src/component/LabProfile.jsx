@@ -13,31 +13,31 @@ const LabProfileView = ({ labData }) => {
         <div className="flex items-center gap-2">
           <User className="w-5 h-5 text-teal-400" />
           <span>Name:</span>
-          <span className="ml-2 font-medium">{labData.name || 'N/A'}</span>
+          <span className="ml-2 font-medium">{labData?.name || 'N/A'}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <Phone className="w-5 h-5 text-teal-400" />
           <span>Phone:</span>
-          <span className="ml-2 font-medium">{labData.phone || 'N/A'}</span>
+          <span className="ml-2 font-medium">{labData?.phone || 'N/A'}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <IdCard className="w-5 h-5 text-yellow-300" />
           <span>License :</span>
-          <span className="ml-2 font-medium">{labData.licenseNumber}</span>
+          <span className="ml-2 font-medium">{labData?.licenseNumber || 'N/A'}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-cyan-400" />
           <span>Address:</span>
-          <span className="ml-2 font-medium">{labData.address}</span>
+          <span className="ml-2 font-medium">{labData?.address || 'N/A'}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <FlaskConical className="w-5 h-5 text-green-400" />
           <span>Test Types:</span>
-          <span className="ml-2 font-medium">{labData.testTypes?.join(', ') || 'None'}</span>
+          <span className="ml-2 font-medium">{labData?.testTypes?.join(', ') || 'None'}</span>
         </div>
       </div>
     </div>
