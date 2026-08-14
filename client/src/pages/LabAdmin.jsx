@@ -1,3 +1,4 @@
+import { useSearchParams} from "react-router-dom";
 import React, { useEffect, useState } from 'react';
 import { getLabProfile, getTodayLabAppointmentCount, getTodayLabAppointments } from '../services/labServices'; 
 import { logoutUser } from "../services/logoutService";
@@ -27,7 +28,8 @@ import {
   Building,
   Settings,
   FlaskConicalIcon,
-  Loader2
+  Loader2,
+  PanelLeft
 } from 'lucide-react';
 import UpdateLabProfile from '../component/UpdateLabProfile';
 import LabRegistration from '../component/LabRegistration';
@@ -70,7 +72,13 @@ const PatientSkeleton = () => (
 );
 
 const LabDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+    const activeTab = searchParams.get("tab") || "home";
+  
+    const handleTabChange = (tab) => {
+      setSearchParams({ tab });
+    };
   const [notifications] = useState(5);
   const [labLoading, setLabLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -81,6 +89,10 @@ const LabDashboard = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [labData, setLabData] = useState(null);
   const [toggle, setToggle] = useState(false);
+  const [toggleSideBar, setToggleSideBar] = useState(() => {
+    const saved = localStorage.getItem("labSidebar");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [totalAppointments, setTotalAppointments] = useState([]);
   const [todayAppointments, setTodayAppointments] = useState([]);
   const navigate = useNavigate();
@@ -483,18 +495,41 @@ const LabDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-700/50">
-          <div className="flex items-center gap-x-3">
-            <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
-              <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
+      <div
+        className={`${toggleSideBar ? "w-64" : "w-20"
+          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+      >
+        <div className="p-3 border-b border-gray-700/50">
+          <div className="flex mt-0.5 items-center justify-between">
+            <div className="flex items-center space-x-3 group">
+              {toggleSideBar && (
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
+                  <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
+                </div>
+              )}
+
+              {toggleSideBar && (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
+                  NirogCare
+                </h1>
+              )}
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
-              NirogCare
-            </h1>
+
+            <PanelLeft
+              onClick={() => {
+                setToggleSideBar((prev) => {
+                  const newValue = !prev;
+                  localStorage.setItem("labSidebar", JSON.stringify(newValue));
+                  return newValue;
+                });
+              }}
+              className={`${toggleSideBar
+                ? ""
+                : "mt-[10px] mb-[11px] mr-[10px]"
+                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+            />
           </div>
         </div>
 
@@ -504,18 +539,35 @@ const LabDashboard = () => {
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   disabled={labLoading && (item.id === 'profile' || item.id === 'Update Profile')}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-300 ${
-                    activeTab === item.id
-                      ? 'bg-gradient-to-r from-emerald-500/20 to-blue-500/20 text-white border border-blue-500/50'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-                  } ${(labLoading && (item.id === 'profile' || item.id === 'Update Profile')) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
+                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                      ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    } ${(labLoading && (item.id === 'profile' || item.id === 'Update Profile'))
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""}`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+
+                  {toggleSideBar && (
+                    <span className="flex-1 text-left">
+                      {item.label}
+                    </span>
+                  )}
+
                   {appointmentsLoading && item.id === 'patients' && (
                     <LoadingSpinner size="w-4 h-4" />
+                  )}
+
+                  {activeTab === item.id && (
+                    <span
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
+                        ? "ml-auto"
+                        : "absolute right-1.5 bottom-1.5"
+                        }`}
+                    ></span>
                   )}
                 </button>
               </li>
@@ -525,31 +577,34 @@ const LabDashboard = () => {
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-700/50">
-          <button 
-            onClick={handleLogout} 
-            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-300"
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center ${toggleSideBar
+              ? "space-x-3 justify-start"
+              : "justify-center"
+              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            {toggleSideBar && <span>Logout</span>}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
+        <header className="sticky top-0 z-10 h-18 bg-gray-900/30 border-b border-gray-700/50 p-3 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-white capitalize">
                 {activeTab === 'home' ? 'Lab Dashboard' : activeTab.replace(/([A-Z])/g, ' $1').trim()}
               </h2>
               <p className="text-gray-400 text-sm">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </p>
             </div>
@@ -574,8 +629,8 @@ const LabDashboard = () => {
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-6">
           {renderContent()}
         </main>
       </div>
