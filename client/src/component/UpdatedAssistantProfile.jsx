@@ -32,7 +32,10 @@ const AssistantForm = ({ onSuccess }) => {
       if (response?.success && response?.assistant) {
         setSubmitStatus('success');
         setMessage(response.message || 'Assistant created successfully');
-        toast.success(response.message || 'Profile Updated Successfully !!');
+        toast.success('Profile Updated Successfully !!',{
+          duration: 3000,
+          className: "doctor-toast",
+        });
         if (onSuccess) {
           onSuccess(response.assistant);
         }

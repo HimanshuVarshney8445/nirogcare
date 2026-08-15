@@ -119,7 +119,10 @@ const HospitalAppointmentBooking = ({ hospitals = [] }) => {
         console.log(response)
       }
 
-      toast.success("Appointment Booked Successfully 🩺")
+      toast.success("Appointment Booked Successfully 🩺",{
+        duration: 3000,
+        className: "doctor-toast",
+      })
       
       // Reset form
       setBookingData({

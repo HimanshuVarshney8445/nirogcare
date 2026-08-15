@@ -8,3 +8,30 @@ section {
   scroll-margin-top: 5rem;
 }
 
+.doctor-toast {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Green progress line */
+.doctor-toast::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: #1c8e46;
+  transform-origin: left;
+  animation: doctor-toast-progress 3s linear forwards;
+}
+
+@keyframes doctor-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}

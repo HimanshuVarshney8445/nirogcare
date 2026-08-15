@@ -148,7 +148,10 @@ const AssistantDashboard = () => {
     const response = await logoutUser();
     if (response?.status === 200) {
       console.log("Logout successfully !!");
-      toast.success("Logout successful!");
+      toast.success("Logout successful!",{
+        duration: 3000,
+        className: "doctor-toast",
+      });
       navigate("/auth");
     }
   };
@@ -229,7 +232,10 @@ const AssistantDashboard = () => {
         `Patient moved to ${targetColumn
           .replace(/([A-Z])/g, " $1")
           .toLowerCase()}`
-      );
+      ,{
+        duration: 3000,
+        className: "doctor-toast",
+      });
     }
     setDraggedPatient(null);
   };
@@ -240,7 +246,10 @@ const AssistantDashboard = () => {
     try {
       const response = await notifyViaFCM(userId);
       if (response.success) {
-        toast.info(`Notification sent to ${patient.name}`);
+        toast.info(`Notification sent to ${patient.name}`,{
+          duration: 3000,
+          className: "doctor-toast",
+        });
         console.log("Notification sent successfully");
       }
     } catch {

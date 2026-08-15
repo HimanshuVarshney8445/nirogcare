@@ -71,7 +71,10 @@ const LabAppointmentBooking = ({ labs = []}) => {
 
       const response = await createAppointmentLab(appointmentData);
       if (response?.success || response?.appointment || response?.message) {
-        toast.success("Lab Test Booked Successfully! 🧪");
+        toast.success("Lab Test Booked Successfully! 🧪",{
+          duration: 3000,
+          className: "doctor-toast",
+        });
         handleBack();
       } else {
         toast.error("Failed to book appointment. Please try again.");

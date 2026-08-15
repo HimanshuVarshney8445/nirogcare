@@ -4,10 +4,10 @@ import VideoCall from './VideoCall';
 
 const DoctorOnlinePatients = ({ onlineAppointments = [], name }) => {
   const [activeCall, setActiveCall] = useState(null);
-  
+
   console.log(onlineAppointments);
 
-  const handleJoinCall = (appointment , name) => {
+  const handleJoinCall = (appointment, name) => {
     setActiveCall({
       callId: appointment,
       name: name
@@ -61,8 +61,8 @@ const DoctorOnlinePatients = ({ onlineAppointments = [], name }) => {
   if (activeCall) {
     return (
       <div>
-        <VideoCall 
-          callId= {activeCall.callId}
+        <VideoCall
+          callId={activeCall.callId}
           name={name}
           role='doctor'
         />
@@ -181,10 +181,16 @@ const DoctorOnlinePatients = ({ onlineAppointments = [], name }) => {
                   className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${canJoinCall(appointment)
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg hover:shadow-emerald-500/20'
                     : 'bg-gray-700 text-gray-300 cursor-not-allowed shadow-none'
-                  }`}
+                    }`}
                 >
                   <Video className="w-5 h-5" />
-                  <span>{canJoinCall(appointment) ? 'Join Call' : 'Available Today'}</span>
+                  <span>
+                    {appointment.status?.toLowerCase() === 'completed'
+                      ? 'Completed'
+                      : canJoinCall(appointment)
+                        ? 'Join Call'
+                        : 'Available Today'}
+                  </span>
                 </button>
                 {!canJoinCall(appointment) && (
                   <p className="text-xs text-gray-500 text-center mt-2">

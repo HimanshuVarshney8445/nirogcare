@@ -39,7 +39,10 @@ const UploadReportForm = ({ appointment, onUploadSuccess }) => {
       const pdfUrl = await uploadToCloudinary();
       const res = await uploadLabReport(appointment._id, pdfUrl);
 
-      toast.success("✅ Report uploaded successfully!");
+      toast.success("✅ Report uploaded successfully!",{
+        duration: 3000,
+        className: "doctor-toast",
+      });
       if (onUploadSuccess) {
         onUploadSuccess(res);
       }

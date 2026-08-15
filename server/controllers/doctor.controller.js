@@ -387,9 +387,11 @@ export const allTodaysAppointment = async(req,res)=>{
 }
 
 
-export const allTodaysOnlineAppointment = async(req,res)=>{
-   try {
-    const doctor = await Doctor.findOne({ userId: req.user.id });
+export const allTodaysOnlineAppointment = async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({
+      userId: req.user.id,
+    });
 
     if (!doctor) {
       return res.status(404).json({
@@ -398,14 +400,32 @@ export const allTodaysOnlineAppointment = async(req,res)=>{
       });
     }
 
-    const doctorId = doctor._id;
-    const hospitalId = doctor.hospitalId;
+    // Today's date
+    const today = new Date();
+
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const appointments = await Appointment.find({
-      doctorId,
-      hospitalId,
-      status: { $ne: "cancelled" },
-      mode : "online"
+      doctorId: doctor._id,
+      hospitalId: doctor.hospitalId,
+
+      // Only today's appointments
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+
+      // Only online appointments
+      mode: "online",
+
+      // Don't show cancelled
+      status: {
+        $nin: ["cancelled"],
+      },
     })
       .populate({
         path: "bookedBy",
@@ -418,25 +438,26 @@ export const allTodaysOnlineAppointment = async(req,res)=>{
           select: "name email",
         },
       })
-      .sort({ date: -1, timeSlot: 1 });
+      .sort({
+        timeSlot: 1,
+      });
 
     return res.status(200).json({
       success: true,
-      message: "All appointments fetched successfully.",
+      message: "Today's online appointments fetched successfully.",
       total: appointments.length,
       appointments,
     });
 
   } catch (error) {
-    console.error("Error fetching all appointments:", error);
+    console.error(
+      "Error fetching today's online appointments:",
+      error
+    );
+
     return res.status(500).json({
-      error: "Server error while fetching all appointments."
+      success: false,
+      error: "Server error while fetching today's online appointments.",
     });
   }
-
-}
-
-
-
-
-
+};

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { User, Stethoscope, Calendar, CreditCard, Building, GraduationCap } from "lucide-react";
 import { doctorProfileApi, getDoctorProfileApi } from "../services/doctorServices";
 import { getAllHospitals } from "../services/hospitalsServices";
+import {toast} from "sonner";
 const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
   const [formData, setFormData] = useState({
     gender: "",
@@ -56,7 +57,10 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
     try {
       const response = await doctorProfileApi(formData);
       if (response) {
-        setMessage("Profile updated successfully!");
+        toast.success("Doctor profile updated successfully!", {
+          duration: 3000,
+          className: "doctor-toast",
+        });
         if (onSuccess) {
           onSuccess(response.doctor || formData);
         }

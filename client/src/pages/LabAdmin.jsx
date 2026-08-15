@@ -167,7 +167,10 @@ const LabDashboard = () => {
     try {
       const response = await logoutUser();
       if (response?.status === 200) {
-        toast.success("Logout successful!");
+        toast.success("Logout successful!",{
+          duration: 3000,
+          className: "doctor-toast",
+        });
         navigate("/auth");
       }
     } catch (error) {

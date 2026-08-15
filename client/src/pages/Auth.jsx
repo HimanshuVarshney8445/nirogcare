@@ -74,7 +74,10 @@ const Auth = () => {
           isSignup
             ? 'Account created successfully!'
             : 'Logged in successfully!'
-        );
+        ,{
+          duration: 3000,
+          className: "doctor-toast",
+        });
 
         navigate(
           response.user.role

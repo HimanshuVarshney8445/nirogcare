@@ -152,7 +152,10 @@ const handleTabChange = (tab) => {
     const response = await logoutUser();
     if (response?.status === 200) {
       console.log("Logout successfully !!");
-      toast.success("Logout successful!");
+      toast.success("Logout successful!",{
+        duration: 3000,
+        className: "doctor-toast",
+      });
       navigate("/auth");
     }
   };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {useParams} from "react-router-dom";
-import { 
-  Home, 
-  Users, 
-  User, 
+import { useParams } from "react-router-dom";
+import {
+  Home,
+  Users,
+  User,
   Bell,
   Clock,
   Search,
@@ -31,7 +31,7 @@ import VideoCall from '../component/VideoCall';
 import DoctorOnlinePatients from '../component/DoctorOnlinePatients';
 
 const DoctorDashboard = () => {
-  const {tab} = useParams();
+  const { tab } = useParams();
   const activeTab = tab || "home";
   const handleTabChange = (tab) => {
     navigate(`/doctor/dashboard/${tab}`);
@@ -46,12 +46,13 @@ const DoctorDashboard = () => {
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
-  const [onlineAppointments , setOnlineAppointments] = useState([]);
+  const [onlineAppointments, setOnlineAppointments] = useState([]);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setToggleSideBar(false); 
+        setToggleSideBar(false);
       } else {
         setToggleSideBar(true);
       }
@@ -72,24 +73,31 @@ const DoctorDashboard = () => {
     if (response) {
       setDoctorDetails(response.user);
       console.log("My info fetched successfully !!", response.user);
-    }  
+    }
   }
 
   const getDoctorDetails = async () => {
     try {
+      setLoadingProfile(true);
+
       const response = await getDoctorProfileApi();
+
       if (response?.doctor) {
-        console.log(response.doctor)
+        console.log("Doctor profile:", response.doctor);
+
         setDoctorProfileDetail(response.doctor);
         setToggle(true);
-        return;
+      } else {
+        setToggle(false);
       }
-      setToggle(false);
+
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
       setToggle(false);
+    } finally {
+      setLoadingProfile(false);
     }
-  }
+  };
 
   const getTodaysPatient = async () => {
     const response = await todaysPatientsApi();
@@ -119,6 +127,7 @@ const DoctorDashboard = () => {
 
   useEffect(() => {
     if (activeTab === 'profile') {
+      getMyDetails();
       getDoctorDetails();
     }
   }, [activeTab]);
@@ -130,32 +139,32 @@ const DoctorDashboard = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'patients') {
+    if (activeTab === 'home' || activeTab === 'patients') {
       getTodaysPatient();
     }
   }, [activeTab]);
 
 
 
-  const getOnlinePatientsAppointments = async()=>{
+  const getOnlinePatientsAppointments = async () => {
     try {
       const response = await todaysOnlinePatientsApi();
-      if(response){
+      if (response) {
         setOnlineAppointments(response.appointments)
       }
-      
+
     } catch {
       toast.error("Failed to load online appointments");
-      
+
     }
   }
 
-  useEffect(()=>{
-    if(activeTab === 'live'){
+  useEffect(() => {
+    if (activeTab === 'live') {
       getOnlinePatientsAppointments();
     }
 
-  },[activeTab])
+  }, [activeTab])
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
@@ -178,27 +187,33 @@ const DoctorDashboard = () => {
     try {
       // Here you would call your API to save the diagnosis
       const response = await addMedicalRecordAPI(diagnosisData);
-      if(response){
+      if (response) {
         console.log(response)
       }
 
-      toast.success('Diagnosis saved successfully!');
+      toast.success('Diagnosis saved successfully!', {
+        duration: 3000,
+        className: "doctor-toast",
+      });
       handleCloseDiagnosisForm();
-      
+
     } catch (error) {
       console.error('Error saving diagnosis:', error);
       toast.error('Failed to save diagnosis. Please try again.');
     }
   };
-    const handleLogout = async () => {
-  const response = await logoutUser();
-  if (response?.status === 200) {
-    console.log("Logout successfully !!");
-    toast.success("Logout successful!");
-    navigate("/auth");
-  } else {
-    toast.error("Logout failed!");
-  }
+  const handleLogout = async () => {
+    const response = await logoutUser();
+    if (response?.status === 200) {
+      console.log("Logout successfully !!");
+      toast.success("Logout successful!", {
+        duration: 3000,
+        className: "doctor-toast",
+      });
+      navigate("/auth");
+    } else {
+      toast.error("Logout failed!");
+    }
 
 
   };
@@ -206,7 +221,7 @@ const DoctorDashboard = () => {
   const doctorInfo = {
     name: doctorDetails?.name,
     specialty: doctorProfileDetail?.specialization,
-    id: doctorProfileDetail?._id,
+    // id: doctorProfileDetail?._id,
     phone: doctorDetails?.phone,
     email: doctorDetails?.email,
     address: doctorProfileDetail?.address,
@@ -218,24 +233,26 @@ const DoctorDashboard = () => {
   };
 
   const todaysStats = [
-    { 
-      icon: Users, 
-      label: 'Total Patients', 
-      value: todaysPatient.length.toString(), 
-      change: '+2 from yesterday', 
-      color: 'text-blue-400' 
+    {
+      icon: Users,
+      label: "Today's Patient",
+      value: todaysPatient
+        .filter(p => p.status !== 'completed' && p.status !== 'cancelled')
+        .length.toString(),
+      // change: '+2 from yesterday', 
+      color: 'text-blue-400'
     },
-    { 
-      icon: CheckCircle, 
-      label: 'Completed', 
-      value: todaysPatient.filter(p => p.status === 'Completed').length.toString(), 
-      change: `${Math.round((todaysPatient.filter(p => p.status === 'Completed').length / todaysPatient.length) * 100) || 0}% done`, 
-      color: 'text-green-400' 
+    {
+      icon: CheckCircle,
+      label: 'Completed',
+      value: todaysPatient.filter(p => p.status === 'completed').length.toString(),
+      change: `${Math.round((todaysPatient.filter(p => p.status === 'completed').length / todaysPatient.length) * 100) || 0}% done`,
+      color: 'text-green-400'
     },
   ];
 
   const renderContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'home':
         return (
           <div className="space-y-6">
@@ -271,31 +288,54 @@ const DoctorDashboard = () => {
                   Upcoming Appointments
                 </h3>
                 <div className="space-y-3">
-                  {todaysPatient.filter(p => p.status === 'Waiting' || p.status === 'In Progress').slice(0, 3).map((patient, index) => (
-                    <div key={index} className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-white">{patient?.bookedBy?.name}</h4>
-                          <p className="text-gray-400 text-sm">Age: {patient.age}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-blue-400 text-sm">{patient.timeSlot}</p>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            patient.status === 'Emergency' ? 'bg-red-400/20 text-red-400' :
-                            patient.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :
-                            'bg-blue-400/20 text-blue-400'
-                          }`}>
-                            {patient.status || 'Waiting'}
-                          </span>
+                  {todaysPatient
+                    .filter(
+                      p => p.status !== 'completed' && p.status !== 'cancelled'
+                    )
+                    .slice(0, 3)
+                    .map((patient, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-white">
+                              {patient?.bookedBy?.name}
+                            </h4>
+
+                            <p className="text-gray-400 text-sm">
+                              Age: {patient.age}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-blue-400 text-sm">
+                              {patient.timeSlot}
+                            </p>
+
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${patient.status === 'Emergency'
+                                ? 'bg-red-400/20 text-red-400'
+                                : patient.status === 'In Progress'
+                                  ? 'bg-yellow-400/20 text-yellow-400'
+                                  : 'bg-blue-400/20 text-blue-400'
+                                }`}
+                            >
+                              {patient.status || 'Waiting'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {todaysPatient.filter(p => p.status === 'Waiting' || p.status === 'In Progress').length === 0 && (
-                    <div className="text-gray-400 text-center py-4">
-                      No upcoming appointments
-                    </div>
-                  )}
+                    ))}
+
+                  {todaysPatient.filter(
+                    p => p.status !== 'completed' && p.status !== 'cancelled'
+                  ).length === 0 && (
+                      <div className="text-gray-400 text-center py-4">
+                        No upcoming appointments
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -333,9 +373,26 @@ const DoctorDashboard = () => {
         );
 
       case 'profile':
+        if (loadingProfile) {
+          return (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+
+                <p className="text-gray-400">
+                  Loading your profile...
+                </p>
+              </div>
+            </div>
+          );
+        }
+
         return (
           toggle ? (
-            <UpdatedDoctor doctorInfo={doctorInfo} onEdit={() => setToggle(false)} />
+            <UpdatedDoctor
+              doctorInfo={doctorInfo}
+              onEdit={() => setToggle(false)}
+            />
           ) : (
             <UpdateDoctorProfile
               doctorDetails={doctorDetails}
@@ -343,6 +400,7 @@ const DoctorDashboard = () => {
                 if (updatedDoctor) {
                   setDoctorProfileDetail(updatedDoctor);
                 }
+
                 setToggle(true);
               }}
             />
@@ -361,17 +419,17 @@ const DoctorDashboard = () => {
                 <div className="flex items-center space-x-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input 
-                      type="text" 
-                      placeholder="Search patients..." 
+                    <input
+                      type="text"
+                      placeholder="Search patients..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-gray-700/50 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-blue-500 focus:outline-none w-64" 
+                      className="bg-gray-700/50 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-blue-500 focus:outline-none w-64"
                     />
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 {filteredPatients.length > 0 ? (
                   filteredPatients.map((patient, index) => (
@@ -379,7 +437,7 @@ const DoctorDashboard = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex-1">
                           <h4 className="font-medium text-white">{patient?.bookedBy?.name}</h4>
-                          <p className="text-gray-400 text-sm">ID: {patient.bookedBy?._id}</p>
+                          {/* <p className="text-gray-400 text-sm">ID: {patient.bookedBy?._id}</p> */}
                           <p className="text-gray-400 text-sm">Age: {patient.age}</p>
                           <p className="text-gray-400 text-sm flex items-center">
                             <Phone className="w-4 h-4 mr-1" />
@@ -423,7 +481,7 @@ const DoctorDashboard = () => {
             </div>
           </div>
         );
-      
+
 
       case "live":
 
@@ -431,7 +489,7 @@ const DoctorDashboard = () => {
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
 
-            <DoctorOnlinePatients onlineAppointments={onlineAppointments} name = {doctorInfo.name}/>
+              <DoctorOnlinePatients onlineAppointments={onlineAppointments} name={doctorInfo.name} />
 
             </div>
           </div>
@@ -442,91 +500,87 @@ const DoctorDashboard = () => {
   };
 
   return (
-     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* Sidebar */}
       <div
-  className={`${toggleSideBar ? "w-64" : "w-20"
-    } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
->
-  <div className="p-3 border-b border-gray-700/50">
-    <div className="flex mt-0.5 items-center justify-between">
-      <div className="flex items-center space-x-3 group">
-        {toggleSideBar && (
-          <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
-            <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
+        className={`${toggleSideBar ? "w-64" : "w-20"
+          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+      >
+        <div className="p-3 border-b border-gray-700/50">
+          <div className="flex mt-0.5 items-center justify-between">
+            <div className="flex items-center space-x-3 group">
+              {toggleSideBar && (
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
+                  <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
+                </div>
+              )}
+
+              {toggleSideBar && (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
+                  NirogCare
+                </h1>
+              )}
+            </div>
+
+            <PanelLeft
+              onClick={() => setToggleSideBar((prev) => !prev)}
+              className={`${toggleSideBar
+                ? ""
+                : "mt-[10px] mb-[11px] mr-[10px]"
+                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+            />
           </div>
-        )}
+        </div>
 
-        {toggleSideBar && (
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
-            NirogCare
-          </h1>
-        )}
-      </div>
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {navItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleTabChange(item.id)}
+                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
+                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                      ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
 
-      <PanelLeft
-        onClick={() => setToggleSideBar((prev) => !prev)}
-        className={`${toggleSideBar
-          ? ""
-          : "mt-[10px] mb-[11px] mr-[10px]"
-          } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
-      />
-    </div>
-  </div>
+                  {toggleSideBar && (
+                    <span className="flex-1 text-left">
+                      {item.label}
+                    </span>
+                  )}
 
-  {/* Navigation */}
-  <nav className="flex-1 p-4">
-    <ul className="space-y-2">
-      {navItems.map((item) => (
-        <li key={item.id}>
+                  {activeTab === item.id && (
+                    <span
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
+                        ? "ml-auto"
+                        : "absolute right-1.5 bottom-1.5"
+                        }`}
+                    ></span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-gray-700/50">
           <button
-            onClick={() => handleTabChange(item.id)}
-            className={`w-full flex items-center ${
-              toggleSideBar ? "space-x-3" : "justify-center"
-            } cursor-pointer p-3 rounded-lg relative ${
-              activeTab === item.id
-                ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
-                : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-            }`}
+            onClick={handleLogout}
+            className={`w-full flex items-center ${toggleSideBar
+              ? "space-x-3 justify-start"
+              : "justify-center"
+              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-
-            {toggleSideBar && (
-              <span className="flex-1 text-left">
-                {item.label}
-              </span>
-            )}
-
-            {activeTab === item.id && (
-              <span
-                className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
-                  toggleSideBar
-                    ? "ml-auto"
-                    : "absolute right-1.5 bottom-1.5"
-                }`}
-              ></span>
-            )}
+            <LogOut className="w-5 h-5" />
+            {toggleSideBar && <span>Logout</span>}
           </button>
-        </li>
-      ))}
-    </ul>
-  </nav>
-
-  {/* Logout */}
-  <div className="p-4 border-t border-gray-700/50">
-    <button
-      onClick={handleLogout}
-      className={`w-full flex items-center ${
-        toggleSideBar
-          ? "space-x-3 justify-start"
-          : "justify-center"
-      } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
-    >
-      <LogOut className="w-5 h-5" />
-      {toggleSideBar && <span>Logout</span>}
-    </button>
-  </div>
-</div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -535,16 +589,16 @@ const DoctorDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-white capitalize">
-                {activeTab === 'home' ? 'Dashboard' : 
-                 activeTab === 'profile' ? 'My Profile' : 
-                 'Today\'s Patients'}
+                {activeTab === 'home' ? 'Dashboard' :
+                  activeTab === 'profile' ? 'My Profile' :
+                    'Today\'s Patients'}
               </h2>
               <p className="text-gray-400 text-sm">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </p>
             </div>
@@ -557,11 +611,17 @@ const DoctorDashboard = () => {
                   </span>
                 )}
               </button>
-              <div className="flex items-center space-x-2">
+              <div
+                onClick={() => navigate('/doctor/dashboard/profile')}
+                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-all duration-200"
+              >
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-medium">Dr. {doctorInfo.name}</span>
+
+                <span className="text-white font-medium">
+                  Dr. {doctorInfo.name}
+                </span>
               </div>
             </div>
           </div>
