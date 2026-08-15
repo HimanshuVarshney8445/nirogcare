@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {useSearchParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import { 
   Home, 
   Users, 
@@ -31,14 +31,11 @@ import VideoCall from '../component/VideoCall';
 import DoctorOnlinePatients from '../component/DoctorOnlinePatients';
 
 const DoctorDashboard = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const activeTab = searchParams.get("tab") || "home";
-
+  const {tab} = useParams();
+  const activeTab = tab || "home";
   const handleTabChange = (tab) => {
-    setSearchParams({ tab });
-  };
-  
+    navigate(`/doctor/dashboard/${tab}`);
+  }
   const [notifications] = useState(3);
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [doctorDetails, setDoctorDetails] = useState(null);
@@ -79,11 +76,18 @@ const DoctorDashboard = () => {
   }
 
   const getDoctorDetails = async () => {
-    const response = await getDoctorProfileApi();
-    if (response) {
-      console.log(response.doctor)
-      setDoctorProfileDetail(response.doctor)
-      setToggle(true)
+    try {
+      const response = await getDoctorProfileApi();
+      if (response?.doctor) {
+        console.log(response.doctor)
+        setDoctorProfileDetail(response.doctor);
+        setToggle(true);
+        return;
+      }
+      setToggle(false);
+    } catch (error) {
+      console.error("Error fetching doctor profile:", error);
+      setToggle(false);
     }
   }
 
@@ -330,7 +334,19 @@ const DoctorDashboard = () => {
 
       case 'profile':
         return (
-          toggle ? <UpdatedDoctor doctorInfo={doctorInfo} /> : <UpdateDoctorProfile doctorDetails={doctorDetails} />
+          toggle ? (
+            <UpdatedDoctor doctorInfo={doctorInfo} onEdit={() => setToggle(false)} />
+          ) : (
+            <UpdateDoctorProfile
+              doctorDetails={doctorDetails}
+              onSuccess={(updatedDoctor) => {
+                if (updatedDoctor) {
+                  setDoctorProfileDetail(updatedDoctor);
+                }
+                setToggle(true);
+              }}
+            />
+          )
         );
 
       case 'patients':

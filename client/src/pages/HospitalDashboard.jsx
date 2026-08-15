@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Home,
   Users,
@@ -39,12 +39,12 @@ import { getAllAssistantsForHospital } from '../services/hospitalsServices';
 import AllAssistants from '../component/AllAssistants';
 
 const HospitalDashboard = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { tab } = useParams();
 
-  const activeTab = searchParams.get("tab") || "home";
+  const activeTab = tab || "home";
 
   const handleTabChange = (tab) => {
-    setSearchParams({ tab });
+    navigate(`/hospitalAdmin/dashboard/${tab}`);
   };
   const [notifications] = useState(5);
   const [toggleSideBar, setToggleSideBar] = useState(false);

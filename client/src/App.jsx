@@ -14,84 +14,104 @@ import HospitalProfileForm from "./component/HospitalProfile";
 const App = () => {
   return (
     <>
-    
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/auth" element={<Auth />} />
 
-      <Route
-        path="/select-role"
-        element={
-          <ProtectRole>
-             <SelectRole />
-          </ProtectRole>
-           
-        }
-      />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
 
-      <Route
-        path="/doctor/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["doctor"]}>
-            <DoctorDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/patient/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["patient"]}>
-            <PatientDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hospitalAdmin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["hospitalAdmin"]}>
-            <HospitalDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/hospitalAdmin/profile"
-        element={
-          <ProtectedRoute>
-            <HospitalProfileForm />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/labAdmin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["labAdmin"]}>
-            <LabAdmin />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/assistant/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["assistant"]}>
-            <AssistantDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/unauthorized"
-        element={
-          <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-center p-4">
-            <h1 className="text-3xl font-bold text-red-500 mb-4">Unauthorized Access</h1>
-            <p className="text-gray-400 mb-6">You do not have permission to access this page.</p>
-            <a href="/" className="px-6 py-2.5 bg-emerald-500 text-black font-semibold rounded-xl hover:bg-emerald-400 transition-colors">
-              Return Home
-            </a>
-          </div>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-   
+        <Route
+          path="/select-role"
+          element={
+            <ProtectRole>
+              <SelectRole />
+            </ProtectRole>
+
+          }
+        />
+        <Route
+          path="/doctor/dashboard"
+          element={<Navigate to="/doctor/dashboard/home" replace />}
+        />
+        <Route
+          path="/doctor/dashboard/:tab"
+          element={
+            <ProtectedRoute allowedRoles={["doctor"]}>
+              <DoctorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patient/dashboard"
+          element={<Navigate to="/patient/dashboard/home" replace />}
+        />
+
+        <Route
+          path="/patient/dashboard/:tab"
+          element={
+            <ProtectedRoute allowedRoles={["patient"]}>
+              <PatientDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hospitalAdmin/dashboard"
+          element={<Navigate to="/hospitalAdmin/dashboard/home" replace />}
+        />
+        <Route
+          path="/hospitalAdmin/dashboard/:tab"
+          element={
+            <ProtectedRoute allowedRoles={["hospitalAdmin"]}>
+              <HospitalDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hospitalAdmin/profile"
+          element={
+            <ProtectedRoute>
+              <HospitalProfileForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/labAdmin/dashboard"
+          element={<Navigate to="/labAdmin/dashboard/home" replace />}
+        />
+        <Route
+          path="/labAdmin/dashboard/:tab"
+          element={
+            <ProtectedRoute allowedRoles={["labAdmin"]}>
+              <LabAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assistant/dashboard"
+          element={<Navigate to="/assistant/dashboard/home" replace />}
+        />
+        <Route
+          path="/assistant/dashboard/:tab"
+          element={
+            <ProtectedRoute allowedRoles={["assistant"]}>
+              <AssistantDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/unauthorized"
+          element={
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-center p-4">
+              <h1 className="text-3xl font-bold text-red-500 mb-4">Unauthorized Access</h1>
+              <p className="text-gray-400 mb-6">You do not have permission to access this page.</p>
+              <a href="/" className="px-6 py-2.5 bg-emerald-500 text-black font-semibold rounded-xl hover:bg-emerald-400 transition-colors">
+                Return Home
+              </a>
+            </div>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
     </>
   );
 };

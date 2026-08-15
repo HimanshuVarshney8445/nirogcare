@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {useSearchParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import {
   Home,
   Users,
@@ -31,13 +31,11 @@ import { VitalSignsForm } from "../component/VitalStats";
 
 const AssistantDashboard = () => {
   const [toggleSideBar, setToggleSideBar] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-    const activeTab = searchParams.get("tab") || "home";
-  
-    const handleTabChange = (tab) => {
-      setSearchParams({ tab });
-    };
+  const {tab} = useParams();
+  const activeTab = tab || "home";
+  const handleTabChange = (tab) => {
+    navigate(`/assistant/dashboard/${tab}`);
+  };
 
   const [draggedPatient, setDraggedPatient] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);

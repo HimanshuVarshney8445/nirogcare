@@ -19,6 +19,13 @@ import {
   Menu,
   X,
   BotIcon,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import CloudGlobe from "../component/Globe";
 import { useNavigate } from "react-router-dom";
@@ -138,6 +145,18 @@ const HealthcareLandingPage = () => {
     { number: "99.9%", label: "Uptime", icon: Shield },
   ];
 
+  const footerLinks = {
+    Platform: ["Features", "Pricing", "How It Works", "Book Appointment"],
+    Company: ["About Us", "Careers", "Press", "Blog"],
+    Support: ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"],
+  };
+
+  const socialLinks = [
+    { icon: Facebook, href: "#", label: "Facebook" },
+    { icon: Twitter, href: "#", label: "Twitter" },
+    { icon: Instagram, href: "#", label: "Instagram" },
+    { icon: Linkedin, href: "#", label: "LinkedIn" },
+  ];
 
 
 
@@ -487,8 +506,8 @@ const HealthcareLandingPage = () => {
         </div>
       </section>
 
-      {/* Contact Section / Enhanced Footer */}
-      <footer id="contact" className=" md:py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden min-h-[400px] md:min-h-[500px]">
+      {/* Contact Section with Globe backdrop */}
+      <section id="contact" className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden min-h-[400px] md:min-h-[500px]">
         {/* Globe and overlay background */}
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           <div className="relative">
@@ -507,8 +526,8 @@ const HealthcareLandingPage = () => {
         {/* Gradient overlay for subtle readability improvement */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-[1]" />
 
-        {/* Footer content on top */}
-        <div className="relative z-10 max-w-7xl mx-auto text-center flex flex-col justify-center min-h-[400px] md:min-h-[500px]">
+        {/* Content on top */}
+        <div className="relative z-10 max-w-7xl mx-auto text-center flex flex-col justify-center min-h-[300px] md:min-h-[400px]">
           {/* Logo and Brand */}
           <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-6 group">
             <div className="p-2.5 md:p-3 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl border border-emerald-500/30 group-hover:border-emerald-400/50 transition-all duration-300 group-hover:scale-105">
@@ -520,13 +539,85 @@ const HealthcareLandingPage = () => {
           </div>
 
           {/* Tagline */}
-          <p className="text-white text-base md:text-lg mb-6 md:mb-8 px-4">
+          <p className="text-white text-base md:text-lg px-4">
             Transforming healthcare, one patient at a time
           </p>
+        </div>
+      </section>
 
-          {/* Copyright */}
-          <div className="text-white text-xs md:text-sm">
-            © 2025 NirogCare. All rights reserved.
+      {/* Footer */}
+      <footer className="relative border-t border-gray-800/60 bg-black/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
+            {/* Brand + contact info */}
+            <div className="md:col-span-2">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-xl border border-emerald-500/30">
+                  <Stethoscope className="text-emerald-300 w-6 h-6" />
+                </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-300 via-cyan-200 to-blue-300 bg-clip-text text-transparent">
+                  NirogCare
+                </h2>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-sm">
+                AI-powered healthcare platform bringing smart scheduling,
+                instant lab results, and predictive health insights to over
+                50,000 patients across India.
+              </p>
+              <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-emerald-400" />
+                  <span>support@nirogcare.com</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span>+91 98765 XXXXX</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400" />
+                  <span>Bengaluru, India</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Link columns */}
+            {Object.entries(footerLinks).map(([heading, links]) => (
+              <div key={heading}>
+                <h3 className="text-white font-semibold mb-4">{heading}</h3>
+                <ul className="space-y-3">
+                  {links.map((link) => (
+                    <li key={link}>
+                      <a
+                        href="#"
+                        className="text-gray-400 hover:text-emerald-400 text-sm transition-colors"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom bar */}
+          <div className="pt-8 border-t border-gray-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-gray-500 text-xs md:text-sm order-2 sm:order-1">
+              © 2025 NirogCare. All rights reserved.
+            </div>
+
+            <div className="flex items-center space-x-3 order-1 sm:order-2">
+              {socialLinks.map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="p-2 rounded-lg bg-gray-900/60 border border-gray-700/50 text-gray-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-all duration-300"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </footer>

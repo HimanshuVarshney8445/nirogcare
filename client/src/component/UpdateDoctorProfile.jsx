@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { User, Stethoscope, Calendar, CreditCard, Building, GraduationCap } from "lucide-react";
 import { doctorProfileApi, getDoctorProfileApi } from "../services/doctorServices";
 import { getAllHospitals } from "../services/hospitalsServices";
-const UpdateDoctorProfile = ({ doctorDetails }) => {
+const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
   const [formData, setFormData] = useState({
     gender: "",
     specialization: "",
@@ -57,6 +57,9 @@ const UpdateDoctorProfile = ({ doctorDetails }) => {
       const response = await doctorProfileApi(formData);
       if (response) {
         setMessage("Profile updated successfully!");
+        if (onSuccess) {
+          onSuccess(response.doctor || formData);
+        }
       }
     } catch (err) {
       console.error(err);

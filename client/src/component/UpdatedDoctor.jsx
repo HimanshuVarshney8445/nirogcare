@@ -8,13 +8,16 @@ import {
   Edit,
  } from 'lucide-react'
 
-export const UpdatedDoctor = ({doctorInfo}) => {
+export const UpdatedDoctor = ({ doctorInfo, onEdit }) => {
   return (
     <div className="space-y-6">
   <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
     <div className="flex items-center justify-between mb-6">
       <h2 className="text-2xl font-bold text-white">My Profile</h2>
-      <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+      <button
+        onClick={onEdit}
+        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+      >
         <Edit className="w-4 h-4" />
         <span>Edit Profile</span>
       </button>

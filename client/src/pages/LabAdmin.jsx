@@ -1,4 +1,4 @@
-import { useSearchParams} from "react-router-dom";
+import { useParams} from "react-router-dom";
 import React, { useEffect, useState } from 'react';
 import { getLabProfile, getTodayLabAppointmentCount, getTodayLabAppointments } from '../services/labServices'; 
 import { logoutUser } from "../services/logoutService";
@@ -72,13 +72,12 @@ const PatientSkeleton = () => (
 );
 
 const LabDashboard = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { tab } = useParams();
+  const activeTab = tab || "home";
+  const handleTabChange = (tab) => {
+    navigate(`/labAdmin/dashboard/${tab}`);
+  }
   
-    const activeTab = searchParams.get("tab") || "home";
-  
-    const handleTabChange = (tab) => {
-      setSearchParams({ tab });
-    };
   const [notifications] = useState(5);
   const [labLoading, setLabLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -211,8 +210,8 @@ const LabDashboard = () => {
     { id: 'home', label: 'Home', icon: Home },
     { id: "profile", label: "My Profile", icon: User },
     { id: 'patients', label: 'Todays Patients', icon: Users },
-    { id: 'Send Reports', label: 'Send Reports', icon: FlaskConical },
-    { id: 'Update Profile', label : 'Update Profile' , icon : Settings}
+    { id: 'send-report', label: 'Send Reports', icon: FlaskConical },
+    { id: 'update-profile', label: 'Update Profile', icon: Settings }
   ];
 
   const safeToday = Array.isArray(todayAppointments) ? todayAppointments : [];
@@ -370,7 +369,7 @@ const LabDashboard = () => {
                                 className="text-blue-600 bg-blue-400/20 px-3 py-1 rounded-full font-semibold hover:bg-blue-400/40 transition"
                                 onClick={() => {
                                   setSelectedAppointment(appt);
-                                  setActiveTab('Send Reports'); 
+                                  handleTabChange('send-report');
                                 }}
                               >
                                 Review
@@ -429,7 +428,7 @@ const LabDashboard = () => {
         );
       }
         
-      case 'Send Reports':
+      case 'send-report':
         return (
           <div className="p-6 space-y-4">
             <h2 className="text-2xl font-bold text-white mb-2"> Report</h2>
@@ -467,7 +466,7 @@ const LabDashboard = () => {
           </div>
         );
 
-      case 'Update Profile':
+      case 'update-profile':
         if (labLoading) {
           return (
             <div className="flex items-center justify-center h-64">

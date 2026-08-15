@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams} from "react-router-dom";
+import { useParams} from "react-router-dom";
 import {
   getAllNearbyHospitals,
   getAllNearbyLabs,
@@ -57,13 +57,13 @@ import LiveComponentPatient from "../component/LiveComponentPatient";
 const PatientDashboard = () => {
   const navigate = useNavigate();
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { tab } = useParams();
 
-  const activeTab = searchParams.get("tab") || "home";
+const activeTab = tab || "home";
 
-  const handleTabChange = (tab) => {
-    setSearchParams({ tab });
-  };
+const handleTabChange = (tab) => {
+  navigate(`/patient/dashboard/${tab}`);
+};
   const [notifications] = useState(3);
   const [hospitals, setHospitals] = useState([]);
   const [labs, setLabs] = useState([]);
