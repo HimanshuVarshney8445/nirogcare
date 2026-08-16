@@ -14,7 +14,9 @@ export default function RecentAdmissions({ totalAppointments }) {
                 <p className="text-gray-400 text-sm">{appt.testDetails?.testName || "No test"}</p>
               </div>
               <div className="text-right">
-                <p className="text-blue-400 text-sm">{new Date(appt.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-blue-400 text-sm">
+  {appt.timeSlot || "Time not available"}
+</p>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   appt.status === 'Completed' ? 'bg-green-400/20 text-green-400' :
                   appt.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :

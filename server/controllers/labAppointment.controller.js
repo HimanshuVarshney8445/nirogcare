@@ -103,33 +103,55 @@ export const getTodayLabAppointmentCount = async (req, res) => {
 // Returns all today's appointments for a specific lab
 export const getTodayAppointmentsForLab = async (req, res) => {
   try {
-    const { labId } = req.params; // pass labId as a URL param
+    const { labId } = req.params;
+
     const lab = await getOwnedLab(req.user.id);
+
     if (!lab || lab._id.toString() !== labId) {
-      return res.status(403).json({ message: "You cannot access this lab's appointments" });
+      return res.status(403).json({
+        message: "You cannot access this lab's appointments",
+      });
     }
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0);
+
+    // Get today's date in India
+    const now = new Date();
+
+    const indiaDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+
+    // Create start and end of today in IST
+    const startOfDay = new Date(`${indiaDate}T00:00:00+05:30`);
+    const endOfDay = new Date(`${indiaDate}T23:59:59.999+05:30`);
 
     const appointments = await LabAppointment.find({
       labId,
-      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
-      isDeleted: false
-    })
-    .populate("bookedBy", "name") // Get patient basic info
-    .populate({
-      path: "doctorReference",
-      populate: {
-        path: "userId",
-        select: "name",
+      scheduledDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
       },
-      select: "userId",
-    });
+      isDeleted: false,
+    })
+      .populate("bookedBy", "name")
+      .populate({
+        path: "doctorReference",
+        populate: {
+          path: "userId",
+          select: "name",
+        },
+        select: "userId",
+      });
 
     res.json(appointments);
   } catch (err) {
-    res.status(500).json({ error: "Unable to fetch today's appointments." });
+    console.error("Error fetching today's lab appointments:", err);
+
+    res.status(500).json({
+      error: "Unable to fetch today's appointments.",
+    });
   }
 };
 
