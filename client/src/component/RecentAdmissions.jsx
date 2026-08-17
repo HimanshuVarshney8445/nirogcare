@@ -15,13 +15,12 @@ export default function RecentAdmissions({ totalAppointments }) {
               </div>
               <div className="text-right">
                 <p className="text-blue-400 text-sm">
-  {appt.timeSlot || "Time not available"}
-</p>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  appt.status === 'Completed' ? 'bg-green-400/20 text-green-400' :
-                  appt.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :
-                  'bg-blue-400/20 text-blue-400'
-                }`}>
+                  {appt.timeSlot || "Time not available"}
+                </p>
+                <span className={`text-xs px-2 py-1 rounded-full ${appt.status === 'Completed' ? 'bg-green-400/20 text-green-400' :
+                    appt.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :
+                      'bg-blue-400/20 text-blue-400'
+                  }`}>
                   {appt.status}
                 </span>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Heart, Thermometer, Droplets, Activity } from 'lucide-react';
 import { updateVitalsForUser } from '../services/patientServices';
 
-export function VitalSignsForm({ appointment, onClose }) {
+export function VitalSignsForm({ appointment, onClose, onVitalUpdated }) {
   const [formData, setFormData] = useState({
     heartRate: '',
     bloodPressure: '',
@@ -33,21 +33,27 @@ export function VitalSignsForm({ appointment, onClose }) {
   const appointmentId = appointment?._id;
 
 
-  const handleSubmit = async(e)=>{
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await updateVitalsForUser(formData, appointmentId);
-      if(response.success) {
-        console.log('Vital signs updated successfully:', response);
+
+      if (response.success) {
+        console.log("Vital signs updated successfully:", response);
+
+        // Tell parent that this appointment's vitals are now updated
+        onVitalUpdated(appointmentId);
+
+        onClose();
       }
     } catch (error) {
-      console.error('Error updating vital signs:', error);
+      console.error("Error updating vital signs:", error);
     }
-    onClose();
-  }
+  };
 
-  
- 
+
+
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">

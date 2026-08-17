@@ -58,11 +58,6 @@ const userSchema = new mongoose.Schema(
     //   type: Date,
     //   default: null,
     // },
-
-    vitalUpdated: {
-      type: Boolean,
-      default: false,
-    },
     isVerified: { type: Boolean, default: false },
   },
   { timestamps: true }

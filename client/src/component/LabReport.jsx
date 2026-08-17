@@ -1,5 +1,5 @@
-import React, { useState, useMemo , useEffect } from 'react';
-import { Search, Filter, FileText,Loader, User,Download, Calendar, Building2, ChevronDown, ChevronUp, Eye, Clock, TestTube, X, AlertCircle, MapPin } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, FileText, Loader, User, Download, Calendar, Building2, ChevronDown, ChevronUp, Eye, Clock, TestTube, X, AlertCircle, MapPin } from 'lucide-react';
 
 const LabReportComponent = ({ labReports = [] }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -8,33 +8,33 @@ const LabReportComponent = ({ labReports = [] }) => {
   const [filterTestType, setFilterTestType] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [selectedReport, setSelectedReport] = useState(null);
-  const [loading , setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
 
 
-      useEffect(() => {
+  useEffect(() => {
     if (labReports.length > 0) {
       setLoading(false);
     }
   }, [labReports]);
 
   const handleDownload = async (url) => {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
 
-    const blobURL = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = blobURL;
-    link.download = 'report.pdf';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(blobURL);
-  } catch (error) {
-    console.error('Download failed:', error);
-  }
-};
+      const blobURL = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobURL;
+      link.download = 'report.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobURL);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
 
 
   const filteredReports = useMemo(() => {
@@ -140,7 +140,7 @@ const LabReportComponent = ({ labReports = [] }) => {
   };
 
 
-    if (loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center text-white flex flex-col items-center">
@@ -167,7 +167,7 @@ const LabReportComponent = ({ labReports = [] }) => {
             </div>
             <p className="text-gray-400">View and manage your laboratory test results</p>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -210,21 +210,21 @@ const LabReportComponent = ({ labReports = [] }) => {
               onChange={(e) => setFilterTestType(e.target.value)}
               className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:border-cyan-500 focus:outline-none"
             >
-              <option value="all">All Test Types</option>
+              <option value="all" className='bg-gray-800 text-white'>All Test Types</option>
               {getUniqueTestTypes().map(type => (
-                <option key={type} value={type}>
+                <option key={type} value={type} className='bg-gray-800 text-white'>
                   {type?.charAt(0).toUpperCase() + type?.slice(1)}
                 </option>
               ))}
             </select>
-            
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:border-cyan-500 focus:outline-none"
             >
-              <option value="date">Newest First</option>
-              <option value="date-asc">Oldest First</option>
+              <option value="date" className='bg-gray-800 text-white'>Newest First</option>
+              <option value="date-asc" className='bg-gray-800 text-white'>Oldest First</option>
             </select>
 
             {(filterStatus !== "all" || filterTestType !== "all" || searchQuery) && (
@@ -332,48 +332,48 @@ const LabReportComponent = ({ labReports = [] }) => {
                     </div>
 
                     {report?.reportPDF && (
-  <div className="flex items-start gap-4 bg-gray-900/40 p-4 rounded-lg ">
-    {/* Icon Box */}
-    <div className="p-2 bg-purple-500/20 rounded-md">
-      <FileText className="w-5 h-5 text-purple-400" />
-    </div>
+                      <div className="flex items-start gap-4 bg-gray-900/40 p-4 rounded-lg ">
+                        {/* Icon Box */}
+                        <div className="p-2 bg-purple-500/20 rounded-md">
+                          <FileText className="w-5 h-5 text-purple-400" />
+                        </div>
 
-    {/* Content Area */}
-    <div className="flex flex-col gap-2">
-      <p className="text-gray-400 text-xs uppercase tracking-wide">Report</p>
+                        {/* Content Area */}
+                        <div className="flex flex-col gap-2">
+                          <p className="text-gray-400 text-xs uppercase tracking-wide">Report</p>
 
-      <div className="flex flex-wrap items-center gap-3">
-        {/* View PDF */}
-        <button
-          onClick={() => setSelectedReport(report)}
-          className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-          View PDF
-        </button>
+                          <div className="flex flex-wrap items-center gap-3">
+                            {/* View PDF */}
+                            <button
+                              onClick={() => setSelectedReport(report)}
+                              className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View PDF
+                            </button>
 
-        {/* Open in Tab */}
-        <button
-          onClick={() => openPDF(report.reportPDF)}
-          className="flex items-center gap-1 text-gray-400 hover:text-gray-300 text-sm transition-colors"
-        >
-          {/* <ArrowUpRight className="w-4 h-4" /> */}
-          Open in Tab
-        </button>
+                            {/* Open in Tab */}
+                            <button
+                              onClick={() => openPDF(report.reportPDF)}
+                              className="flex items-center gap-1 text-gray-400 hover:text-gray-300 text-sm transition-colors"
+                            >
+                              {/* <ArrowUpRight className="w-4 h-4" /> */}
+                              Open in Tab
+                            </button>
 
-        {/* Download PDF */}
-                  <button
-            onClick={() => handleDownload(report.reportPDF)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-          >
-            <Download className="w-5 h-5" />
-            Download PDF
-          </button>
+                            {/* Download PDF */}
+                            <button
+                              onClick={() => handleDownload(report.reportPDF)}
+                              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
+                            >
+                              <Download className="w-5 h-5" />
+                              Download PDF
+                            </button>
 
-      </div>
-    </div>
-  </div>
-)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                   </div>
                 </div>
@@ -383,7 +383,7 @@ const LabReportComponent = ({ labReports = [] }) => {
                   <div className="mt-6 pt-6 border-t border-gray-700">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Report Details */}
-                                              <div className="bg-gray-800 rounded-xl p-4">
+                      <div className="bg-gray-800 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <AlertCircle className="w-5 h-5 text-blue-400" />
                           <h4 className="text-white font-semibold">Report Details</h4>

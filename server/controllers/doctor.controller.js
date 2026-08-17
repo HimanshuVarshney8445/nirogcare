@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Doctor } from "../models/Doctor.js";
-import {Appointment} from "../models/Appointment.js"
+import { Appointment } from "../models/Appointment.js"
 import User from "../models/User.js";
 import { Assistant } from "../models/Assistant.js";
 import { MedicalRecord } from "../models/MedicalRecord.js";
@@ -243,7 +243,7 @@ export const getDoctorsByHospital = async (req, res) => {
         path: "userId",
         select: "name email",
       })
-      .select("specialization experience userId"); 
+      .select("specialization experience userId");
 
     const formattedDoctors = doctors.map((doc) => ({
       doctorId: doc._id,
@@ -286,7 +286,7 @@ export const allAppointments = async (req, res) => {
     })
       .populate({
         path: "bookedBy",
-        select: "name email vitalUpdated",
+        select: "name email",
       })
       .populate({
         path: "doctorId",
@@ -315,8 +315,8 @@ export const allAppointments = async (req, res) => {
 
 
 
-export const allTodaysAppointment = async(req,res)=>{
-   try {
+export const allTodaysAppointment = async (req, res) => {
+  try {
     const doctor = await Doctor.findOne({ userId: req.user.id });
 
     if (!doctor) {

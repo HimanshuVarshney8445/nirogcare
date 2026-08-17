@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {useParams} from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import {
   Home,
   Users,
@@ -31,7 +31,7 @@ import { VitalSignsForm } from "../component/VitalStats";
 
 const AssistantDashboard = () => {
   const [toggleSideBar, setToggleSideBar] = useState(true);
-  const {tab} = useParams();
+  const { tab } = useParams();
   const activeTab = tab || "home";
   const handleTabChange = (tab) => {
     navigate(`/assistant/dashboard/${tab}`);
@@ -45,6 +45,7 @@ const AssistantDashboard = () => {
   const [appointments, setAllAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVitalForm, setShowVitalForm] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [queueData, setQueueData] = useState({
     upcoming: [],
@@ -88,6 +89,32 @@ const AssistantDashboard = () => {
     fetchInitialData();
   }, []);
 
+  const formatDate = (dateString) => new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+
+    const appointmentDate = new Date(dateString);
+
+    const today = new Date();
+
+    return (
+      appointmentDate.getFullYear() === today.getFullYear() &&
+      appointmentDate.getMonth() === today.getMonth() &&
+      appointmentDate.getDate() === today.getDate()
+    );
+  };
+
+  const todaysAppointments = useMemo(() => {
+    return appointments.filter((appointment) =>
+      isToday(appointment?.date)
+    );
+  }, [appointments, currentDate]);
+
   const navItems = [
     { id: "home", label: "Home", icon: Home },
     { id: "profile", label: "My Profile", icon: User },
@@ -97,50 +124,53 @@ const AssistantDashboard = () => {
 
   // Convert appointments to queue format
   useEffect(() => {
-    if (appointments.length > 0) {
-      const categorizedAppointments = {
-        upcoming: [],
-        inProgress: [],
-        completed: [],
-        cancelled: [],
+    const categorizedAppointments = {
+      upcoming: [],
+      inProgress: [],
+      completed: [],
+      cancelled: [],
+    };
+
+    todaysAppointments.forEach((appointment) => {
+      const queueItem = {
+        patientId: appointment?.bookedBy?._id,
+        id: appointment?._id,
+        name: appointment?.bookedBy?.name || "Unknown Patient",
+        age: appointment?.age || "N/A",
+        condition: appointment?.reason || "General Consultation",
+        doctor: appointment?.doctorId?.userId?.name || "N/A",
+        time: appointment?.timeSlot || "N/A",
+        status: appointment?.status,
+        appointmentData: appointment,
       };
 
-      appointments.forEach((appointment) => {
-        const queueItem = {
-          patientId: appointment.bookedBy._id,
-          id: appointment._id,
-          name: appointment?.bookedBy?.name || "Unknown Patient",
-          age: appointment.age || "N/A",
-          condition: appointment.reason || "General Consultation",
-          doctor: appointment?.doctorId?.userId?.name || "N/A",
-          time: appointment.timeSlot || "N/A",
-          status: appointment.status,
-          appointmentData: appointment, // Store full appointment data
-        };
+      const status = appointment?.status?.toLowerCase();
 
-        const status = appointment.status?.toLowerCase();
-        switch (status) {
-          case "confirmed":
-          case "scheduled":
-            categorizedAppointments.upcoming.push(queueItem);
-            break;
-          case "in-progress":
-          case "ongoing":
-            categorizedAppointments.inProgress.push(queueItem);
-            break;
-          case "completed":
-            categorizedAppointments.completed.push(queueItem);
-            break;
-          case "cancelled":
-            categorizedAppointments.cancelled.push(queueItem);
-            break;
-          default:
-            categorizedAppointments.upcoming.push(queueItem);
-        }
-      });
+      switch (status) {
+        case "confirmed":
+        case "scheduled":
+          categorizedAppointments.upcoming.push(queueItem);
+          break;
 
-      setQueueData(categorizedAppointments);
-    }
+        case "in-progress":
+        case "ongoing":
+          categorizedAppointments.inProgress.push(queueItem);
+          break;
+
+        case "completed":
+          categorizedAppointments.completed.push(queueItem);
+          break;
+
+        case "cancelled":
+          categorizedAppointments.cancelled.push(queueItem);
+          break;
+
+        default:
+          categorizedAppointments.upcoming.push(queueItem);
+      }
+    });
+
+    setQueueData(categorizedAppointments);
   }, [appointments]);
 
 
@@ -148,7 +178,7 @@ const AssistantDashboard = () => {
     const response = await logoutUser();
     if (response?.status === 200) {
       console.log("Logout successfully !!");
-      toast.success("Logout successful!",{
+      toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
       });
@@ -232,10 +262,10 @@ const AssistantDashboard = () => {
         `Patient moved to ${targetColumn
           .replace(/([A-Z])/g, " $1")
           .toLowerCase()}`
-      ,{
-        duration: 3000,
-        className: "doctor-toast",
-      });
+        , {
+          duration: 3000,
+          className: "doctor-toast",
+        });
     }
     setDraggedPatient(null);
   };
@@ -246,7 +276,7 @@ const AssistantDashboard = () => {
     try {
       const response = await notifyViaFCM(userId);
       if (response.success) {
-        toast.info(`Notification sent to ${patient.name}`,{
+        toast.info(`Notification sent to ${patient.name}`, {
           duration: 3000,
           className: "doctor-toast",
         });
@@ -257,11 +287,7 @@ const AssistantDashboard = () => {
     }
   };
 
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+
 
   const PatientCard = ({ patient, columnType }) => (
     <div
@@ -301,11 +327,10 @@ const AssistantDashboard = () => {
 
   const KanbanColumn = ({ title, patients, columnKey, icon: ColumnIcon, color }) => (
     <div
-      className={`bg-gray-800/30 p-4 rounded-xl border transition-all duration-300 min-h-[600px] ${
-        dragOverColumn === columnKey
-          ? "border-blue-500/70 bg-blue-500/10 shadow-lg shadow-blue-500/20"
-          : "border-gray-700/50"
-      }`}
+      className={`bg-gray-800/30 p-4 rounded-xl border transition-all duration-300 min-h-[600px] ${dragOverColumn === columnKey
+        ? "border-blue-500/70 bg-blue-500/10 shadow-lg shadow-blue-500/20"
+        : "border-gray-700/50"
+        }`}
       onDragOver={handleDragOver}
       onDragEnter={(e) => handleDragEnter(e, columnKey)}
       onDragLeave={handleDragLeave}
@@ -350,7 +375,7 @@ const AssistantDashboard = () => {
           <div className="space-y-6">
             <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 p-6 rounded-xl border border-green-500/30">
               <h2 className="text-2xl font-bold text-white mb-2">
-                Welcome Back ,{userData?.user?.name}
+                Welcome Back, {userData?.user?.name}
               </h2>
               <p className="text-gray-300">
                 Manage patient queues and send notifications
@@ -362,7 +387,7 @@ const AssistantDashboard = () => {
                 <div className="flex items-center justify-between mb-2">
                   <Clock className="w-8 h-8 text-yellow-400" />
                   <span className="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded-full">
-                    {appointments.length}
+                    {todaysAppointments.length}
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold text-white">
@@ -414,11 +439,11 @@ const AssistantDashboard = () => {
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">All Patients</h2>
+                <h2 className="text-2xl font-bold text-white">Today's Patients</h2>
                 <div className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-blue-400" />
                   <span className="text-blue-400 font-medium">
-                    {appointments.length} Total Appointments
+                    {todaysAppointments.length} Today's Appointments
                   </span>
                 </div>
               </div>
@@ -429,12 +454,21 @@ const AssistantDashboard = () => {
                     <VitalSignsForm
                       appointment={selectedAppointment}
                       onClose={() => setShowVitalForm(false)}
+                      onVitalUpdated={(appointmentId) => {
+                        setAllAppointments((prevAppointments) =>
+                          prevAppointments.map((appointment) =>
+                            appointment._id === appointmentId
+                              ? { ...appointment, vitalUpdated: true }
+                              : appointment
+                          )
+                        );
+                      }}
                     />
                   </div>
                 </div>
               )}
 
-              {appointments.length === 0 ? (
+              {todaysAppointments.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-400 mb-2">
@@ -446,7 +480,7 @@ const AssistantDashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {appointments.map((appointment, index) => (
+                  {todaysAppointments.map((appointment, index) => (
                     <div
                       key={index}
                       className="p-4 rounded-lg border border-gray-700/50 bg-gray-800/20 hover:bg-gray-800/40 transition-all duration-300"
@@ -458,7 +492,7 @@ const AssistantDashboard = () => {
                               {appointment?.bookedBy?.name || "Unknown Patient"}
                             </h4>
                             <span
-                              className={`text-xs px-2 py-1 rounded-full bg-green-800`}
+                              className={`text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400`}
                             >
                               {appointment.status || "Pending"}
                             </span>
@@ -466,10 +500,6 @@ const AssistantDashboard = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                             <div className="space-y-1">
-                              <p className="text-gray-400">
-                                <span className="font-medium">Patient ID:</span>{" "}
-                                {appointment.bookedBy._id || "N/A"}
-                              </p>
                               <p className="text-gray-400">
                                 <span className="font-medium">Age:</span>{" "}
                                 {appointment.age || "N/A"}
@@ -533,22 +563,25 @@ const AssistantDashboard = () => {
                               Urgent
                             </span>
                           )}
-                          {
-                            appointment?.bookedBy?.vitalUpdated === true ? (
-                              <span className="bg-green-500/20 text-green-400  px-3 py-1 rounded-md text-sm transition-colors">
-                                Already Updated
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setShowVitalForm(true);
-                                  setSelectedAppointment(appointment);
-                                }}
-                                className="bg-blue-500/20 cursor-pointer hover:bg-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-sm transition-colors"
-                              >
-                                Update Vital Stats
-                              </button>
-                            )}
+                          {appointment?.vitalUpdated === true ? (
+                            <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-md text-sm">
+                              Already Updated
+                            </span>
+                          ) : appointment?.status?.toLowerCase() === "completed" ? (
+                            <span className="bg-gray-500/20 text-gray-400 px-3 py-1 rounded-md text-sm">
+                              Appointment Completed
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setShowVitalForm(true);
+                                setSelectedAppointment(appointment);
+                              }}
+                              className="bg-blue-500/20 cursor-pointer hover:bg-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-sm transition-colors"
+                            >
+                              Update Vital Stats
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -659,148 +692,146 @@ const AssistantDashboard = () => {
   }
 
   return (
-  <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
 
-    {/* Sidebar */}
-    <div
-      className={`${
-        toggleSideBar ? "w-64" : "w-20"
-      } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
-    >
-      <div className="p-3 border-b border-gray-700/50">
-        <div className="flex mt-0.5 items-center justify-between">
-          <div className="flex items-center space-x-3 group">
-            {toggleSideBar && (
-              <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
-                <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
-              </div>
-            )}
+      {/* Sidebar */}
+      <div
+        className={`${toggleSideBar ? "w-64" : "w-20"
+          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+      >
+        <div className="p-3 border-b border-gray-700/50">
+          <div className="flex mt-0.5 items-center justify-between">
+            <div className="flex items-center space-x-3 group">
+              {toggleSideBar && (
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 rounded-xl border border-emerald-500/30">
+                  <Stethoscope className="text-emerald-400 w-7 h-7 group-hover:text-emerald-300" />
+                </div>
+              )}
 
-            {toggleSideBar && (
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
-                NirogCare
-              </h1>
-            )}
-          </div>
+              {toggleSideBar && (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
+                  NirogCare
+                </h1>
+              )}
+            </div>
 
-          <PanelLeft
-            onClick={() => setToggleSideBar((prev) => !prev)}
-            className={`${
-              toggleSideBar
+            <PanelLeft
+              onClick={() => setToggleSideBar((prev) => !prev)}
+              className={`${toggleSideBar
                 ? ""
                 : "mt-[10px] mb-[11px] mr-[10px]"
-            } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
-          />
+                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+            />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {navItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleTabChange(item.id)}
+                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
+                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                      ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                    }`}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+
+                  {toggleSideBar && (
+                    <span className="flex-1 text-left">
+                      {item.label}
+                    </span>
+                  )}
+
+                  {activeTab === item.id && (
+                    <span
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
+                        ? "ml-auto"
+                        : "absolute right-1.5 bottom-1.5"
+                        }`}
+                    ></span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-gray-700/50">
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center ${toggleSideBar
+              ? "space-x-3 justify-start"
+              : "justify-center"
+              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+          >
+            <LogOut className="w-5 h-5" />
+            {toggleSideBar && <span>Logout</span>}
+          </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => handleTabChange(item.id)}
-                className={`w-full flex items-center ${
-                  toggleSideBar ? "space-x-3" : "justify-center"
-                } cursor-pointer p-3 rounded-lg relative ${
-                  activeTab === item.id
-                    ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
-                    : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                }`}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
 
-                {toggleSideBar && (
-                  <span className="flex-1 text-left">
-                    {item.label}
+        {/* Header */}
+        {activeTab === "home" && (
+          <header className="sticky top-0 z-10 h-18 bg-gray-900/30 border-b border-gray-700/50 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-white capitalize">
+                  {activeTab === "home"
+                    ? "Assistant Dashboard"
+                    : activeTab === "queue"
+                      ? "Queue Management"
+                      : activeTab.replace(/([A-Z])/g, " $1").trim()}
+                </h2>
+
+                <p className="text-gray-400 text-sm">
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                  <Bell className="w-5 h-5" />
+                </button>
+
+                <div
+                  onClick={() => handleTabChange("profile")}
+                  className="flex items-center space-x-2 cursor-pointer group"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+
+                  <span className="text-white font-medium">
+                    {userData?.user?.name}
                   </span>
-                )}
-
-                {activeTab === item.id && (
-                  <span
-                    className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
-                      toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                    }`}
-                  ></span>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Logout */}
-      <div className="p-4 border-t border-gray-700/50">
-        <button
-          onClick={handleLogout}
-          className={`w-full flex items-center ${
-            toggleSideBar
-              ? "space-x-3 justify-start"
-              : "justify-center"
-          } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
-        >
-          <LogOut className="w-5 h-5" />
-          {toggleSideBar && <span>Logout</span>}
-        </button>
-      </div>
-    </div>
-
-    {/* Main Content */}
-    <div className="flex-1 flex flex-col overflow-hidden">
-
-      {/* Header */}
-      {activeTab === "home" && (
-        <header className="sticky top-0 z-10 h-18 bg-gray-900/30 border-b border-gray-700/50 p-3 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white capitalize">
-                {activeTab === "home"
-                  ? "Assistant Dashboard"
-                  : activeTab === "queue"
-                  ? "Queue Management"
-                  : activeTab.replace(/([A-Z])/g, " $1").trim()}
-              </h2>
-
-              <p className="text-gray-400 text-sm">
-                {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                <Bell className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
                 </div>
-
-                <span className="text-white font-medium">
-                  {userData?.user?.name}
-                </span>
               </div>
             </div>
-          </div>
-        </header>
-      )}
+          </header>
+        )}
 
-      {/* Scrollable Content */}
-      <main className="flex-1 overflow-y-auto p-6">
-        {renderContent()}
-      </main>
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {renderContent()}
+        </main>
 
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default AssistantDashboard;
+

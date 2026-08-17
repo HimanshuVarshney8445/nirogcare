@@ -117,32 +117,66 @@ export const updateVitalsForUser = async (req, res) => {
     } = req.body;
 
     const assistant = await Assistant.findOne({ userId: req.user.id });
+
     if (!assistant) {
-      return res.status(403).json({ success: false, message: "Assistant profile is required" });
+      return res.status(403).json({
+        success: false,
+        message: "Assistant profile is required",
+      });
     }
+
     const appointment = await Appointment.findOne({
       _id: appointmentId,
       doctorId: assistant.doctorId,
       hospitalId: assistant.hospitalId,
     });
+
     if (!appointment) {
-      return res.status(404).json({ success: false, message: "Appointment not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
     }
+
+    // Do not allow vitals to be updated after appointment is completed
+    if (appointment.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot update vitals after appointment completion",
+      });
+    }
+
+    // Do not allow vitals to be updated more than once
+    if (appointment.vitalUpdated === true) {
+      return res.status(400).json({
+        success: false,
+        message: "Vitals have already been updated for this appointment",
+      });
+    }
+
     const user = await User.findById(appointment.bookedBy);
 
     if (!user || user.role !== "patient") {
-      return res.status(404).json({ success: false, message: "Patient not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found",
+      });
     }
 
+    // Update patient's vitals
     user.heartRate = heartRate;
     user.bloodPressure = bloodPressure;
     user.oxygenLevel = oxygenLevel;
     user.temperature = temperature;
-    user.vitalUpdated = true;
 
     await user.save();
 
-    res.status(200).json({
+    // Mark THIS appointment as having its vitals updated
+    appointment.vitalUpdated = true;
+
+    await appointment.save();
+
+    return res.status(200).json({
       success: true,
       message: "Vitals updated successfully",
       data: {
@@ -150,15 +184,14 @@ export const updateVitalsForUser = async (req, res) => {
         bloodPressure: user.bloodPressure,
         oxygenLevel: user.oxygenLevel,
         temperature: user.temperature,
-        vitalUpdated: user.vitalUpdated,
+        vitalUpdated: appointment.vitalUpdated,
       },
     });
 
-
-
   } catch (error) {
     console.error("Error updating vitals:", error);
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: "Server error",
       error: error.message,
@@ -221,14 +254,4 @@ export const getAllLabReportsBookedByUser = async (req, res) => {
     res.status(500).json({ error: "Server error fetching lab reports." });
   }
 };
-
-
-
-
-
-
-
-
-
-
 

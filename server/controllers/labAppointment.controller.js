@@ -83,20 +83,46 @@ export const getMyLabAppointments = async (req, res) => {
 export const getTodayLabAppointmentCount = async (req, res) => {
   try {
     const lab = await getOwnedLab(req.user.id);
-    if (!lab) return res.status(404).json({ message: "Lab profile not found" });
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0);
+
+    if (!lab) {
+      return res.status(404).json({
+        message: "Lab profile not found",
+      });
+    }
+
+    const now = new Date();
+
+    const indiaDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+
+    const startOfDay = new Date(
+      `${indiaDate}T00:00:00+05:30`
+    );
+
+    const endOfDay = new Date(
+      `${indiaDate}T23:59:59.999+05:30`
+    );
 
     const count = await LabAppointment.countDocuments({
       labId: lab._id,
-      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
-      isDeleted: false
+      scheduledDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      isDeleted: false,
     });
 
     res.status(200).json({ count });
   } catch (error) {
-    res.status(500).json({ error: "Could not count today's appointments." });
+    console.error("Count error:", error);
+
+    res.status(500).json({
+      error: "Could not count today's appointments.",
+    });
   }
 };
 
@@ -158,14 +184,21 @@ export const getTodayAppointmentsForLab = async (req, res) => {
 
 export const uploadReportForAppointment = async (req, res) => {
   try {
+    console.log("========== UPLOAD REPORT ==========");
     const { id } = req.params;
     const { reportPDF } = req.body;
+
+    console.log("Appointment ID:", id);
+    console.log("Report PDF:", reportPDF);
+    console.log("Request body:", req.body);
+    console.log("Logged in user:", req.user);
 
     if (!id || !reportPDF) {
       return res.status(400).json({ error: "Missing appointment ID or report URL" });
     }
 
     const lab = await getOwnedLab(req.user.id);
+    console.log("Owned lab:", lab);
     if (!lab) return res.status(404).json({ message: "Lab profile not found" });
 
     const appointment = await LabAppointment.findOneAndUpdate(
@@ -173,10 +206,12 @@ export const uploadReportForAppointment = async (req, res) => {
       { reportPDF, status: "Completed" },
       { new: true }
     );
+    console.log("Updated appointment:", appointment);
 
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found" });
     }
+    console.log("✅ REPORT UPLOADED SUCCESSFULLY");
 
     res.status(200).json({
       message: "Report uploaded successfully",

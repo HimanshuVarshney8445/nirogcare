@@ -170,11 +170,7 @@ const LabDashboard = () => {
 
     try {
       const response = await getTodayLabAppointments(labData._id);
-      console.log("TODAY APPOINTMENTS RESPONSE:", response);
-    console.log(
-      "FIRST APPOINTMENT scheduledDate:",
-      response?.[0]?.scheduledDate
-    );
+
       setTotalAppointments(normalizeAppointments(response));
     } catch (error) {
       console.error("Error fetching today's appointments:", error);
@@ -189,15 +185,6 @@ const LabDashboard = () => {
 
     try {
       const appointmentsForToday = await getTodayLabAppointments(labId);
-      console.log(
-      "HOME TODAY APPOINTMENTS RESPONSE:",
-      appointmentsForToday
-    );
-
-    console.log(
-      "HOME FIRST scheduledDate:",
-      appointmentsForToday?.[0]?.scheduledDate
-    );
       setTodayAppointments(
         normalizeAppointments(appointmentsForToday)
       );
@@ -302,19 +289,19 @@ const LabDashboard = () => {
     ? todayAppointments
     : [];
 
-  const completedCount =
-    safeAppointments.filter(
-      (a) => a.status === "Completed"
-    ).length ||
-    safeToday.filter(
-      (a) => a.status === "Completed"
-    ).length;
+  const completedCount = safeToday.filter(
+    (appointment) => appointment.status === "Completed"
+  ).length;
+
+  const activePatientsCount = safeToday.filter(
+    (appointment) => appointment.status !== "Completed"
+  ).length;
 
   const labStats = [
     {
       icon: Users,
       label: "Total Patients",
-      value: totalPatientsToday,
+      value: activePatientsCount,
       // change: "+0%",
       color: "text-blue-400",
       loading: statsLoading,
@@ -384,7 +371,9 @@ const LabDashboard = () => {
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentAdmissions
-                totalAppointments={todayAppointments}
+                totalAppointments={todayAppointments.filter(
+                  (appointment) => appointment.status !== "Completed"
+                )}
               />
 
               <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
@@ -469,7 +458,7 @@ const LabDashboard = () => {
                   </div>
                 ) : (
                   filtered.map((appt) => (
-                    
+
                     <div
                       key={appt._id}
                       className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300"
@@ -493,8 +482,8 @@ const LabDashboard = () => {
 
                         <div className="text-right flex flex-col items-end gap-2">
                           <p className="text-blue-400 font-medium">
-  {appt.timeSlot || "Time not available"}
-</p>
+                            {appt.timeSlot || "Time not available"}
+                          </p>
 
                           {appt.status === "Pending" ? (
                             <button
@@ -645,9 +634,9 @@ const LabDashboard = () => {
 
                 <UploadReportForm
                   appointment={selectedAppointment}
-                  onUploadSuccess={() => {
-                    getAllLabAppointment();
-                    fetchTodayAppointments();
+                  onUploadSuccess={async () => {
+                    await getTodayLabAppointment();
+                    await fetchTodayAppointments();
                     setSelectedAppointment(null);
                     handleTabChange("patients");
                   }}
@@ -782,6 +771,7 @@ const LabDashboard = () => {
 
                 <p className="text-gray-400 text-sm">
                   {new Date().toLocaleDateString("en-US", {
+                    timeZone: "Asia/Kolkata",
                     weekday: "long",
                     year: "numeric",
                     month: "long",
