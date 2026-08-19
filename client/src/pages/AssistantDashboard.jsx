@@ -133,7 +133,7 @@ const AssistantDashboard = () => {
 
     todaysAppointments.forEach((appointment) => {
       const queueItem = {
-        patientId: appointment?.bookedBy?._id,
+        patientId: appointment?.bookedBy?._id || (typeof appointment?.bookedBy === "string" ? appointment?.bookedBy : null) || appointment?.patientId?._id || appointment?.patientId,
         id: appointment?._id,
         name: appointment?.bookedBy?.name || "Unknown Patient",
         age: appointment?.age || "N/A",
@@ -246,18 +246,10 @@ const AssistantDashboard = () => {
     try {
       const response = await updateAppointmentStatus(draggedPatient.id, statusByColumn[targetColumn]);
       setAllAppointments((current) => current.map((appointment) => (
-        appointment._id === draggedPatient.id ? response.appointment : appointment
+        appointment._id === draggedPatient.id
+          ? { ...appointment, ...response.appointment }
+          : appointment
       )));
-    } catch (error) {
-      toast.error(error.message || "Could not update appointment status");
-      setDraggedPatient(null);
-      return;
-    }
-
-    // Send notification when patient is moved to "In Progress"
-    if (targetColumn === "inProgress") {
-      await sendNotification(draggedPatient);
-    } else {
       toast.success(
         `Patient moved to ${targetColumn
           .replace(/([A-Z])/g, " $1")
@@ -266,24 +258,63 @@ const AssistantDashboard = () => {
           duration: 3000,
           className: "doctor-toast",
         });
+    } catch (error) {
+      toast.error(error.message || "Could not update appointment status");
+      setDraggedPatient(null);
+      return;
     }
     setDraggedPatient(null);
   };
 
-  const sendNotification = async (patient) => {
+  const getNotificationContent = (status, patientName) => {
+    switch (status) {
+      case "inProgress":
+      case "in-progress":
+        return {
+          title: "Appointment In-Progress",
+          body: `Hello ${patientName}, your appointment status is now in-progress. Please proceed to the doctor's room.`,
+        };
+      case "completed":
+        return {
+          title: "Appointment Completed",
+          body: `Hello ${patientName}, your appointment has been marked as completed. Thank you for visiting.`,
+        };
+      case "cancelled":
+        return {
+          title: "Appointment Cancelled",
+          body: `Hello ${patientName}, your appointment has been cancelled.`,
+        };
+      default:
+        const formattedStatus = status.replace(/([A-Z])/g, " $1").toLowerCase();
+        return {
+          title: "Appointment Update",
+          body: `Hello ${patientName}, your appointment status has been updated to: ${formattedStatus}.`,
+        };
+    }
+  };
+
+  const sendNotification = async (patient, status = "inProgress") => {
     const userId = patient.patientId;
+    if (!userId) {
+      toast.error("Patient ID missing for notification");
+      return;
+    }
 
     try {
-      const response = await notifyViaFCM(userId);
+      const { title, body } = getNotificationContent(status, patient.name);
+      const response = await notifyViaFCM(userId, title, body);
       if (response.success) {
         toast.info(`Notification sent to ${patient.name}`, {
           duration: 3000,
           className: "doctor-toast",
         });
         console.log("Notification sent successfully");
+      } else {
+        toast.error(response.message || "Notification could not be sent");
       }
-    } catch {
-      toast.error("Notification could not be sent");
+    } catch (err) {
+      console.error("Error sending notification:", err);
+      toast.error(err?.response?.data?.message || "Notification could not be sent");
     }
   };
 

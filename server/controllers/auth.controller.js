@@ -177,4 +177,33 @@ export const logoutUser = async (req, res) => {
   }
 };
 
+export const updateFcmToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { fcmToken },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "FCM token updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Update FCM Token Error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 

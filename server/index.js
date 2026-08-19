@@ -5,19 +5,17 @@ import { connectDB } from './database/db.js';
 import authRoutes from './routes/authRoutes.js';
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import hospitalRoute from "./routes/hospitalRoutes.js"
-import patientRoute from "./routes/patientRoutes.js"
-import doctorRoute from "./routes/doctorRoutes.js"
-import labRoute from "./routes/labRoutes.js"
-import firebaseRoute from "./routes/firebaseRoutes.js"
-import assistantRoute from "./routes/assistantRoutes.js"
-import appointmentRoute from "./routes/appointmentRoutes.js"
-import aiRouter from "./routes/aiRoutes.js"
-import medicalRecordRoutes from "./routes/medicalRecordRoutes.js"
-import videoRoutes from './routes/videoRoutes.js'
-
-
-
+import hospitalRoute from "./routes/hospitalRoutes.js";
+import patientRoute from "./routes/patientRoutes.js";
+import doctorRoute from "./routes/doctorRoutes.js";
+import labRoute from "./routes/labRoutes.js";
+import firebaseRoute from "./routes/firebaseRoutes.js";
+import assistantRoute from "./routes/assistantRoutes.js";
+import appointmentRoute from "./routes/appointmentRoutes.js";
+import aiRouter from "./routes/aiRoutes.js";
+import medicalRecordRoutes from "./routes/medicalRecordRoutes.js";
+import videoRoutes from './routes/videoRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -35,24 +33,21 @@ app.use(cors({
   credentials: true,
 }));
 
-
-
 app.use(express.json());
 app.use(cookieParser());
 
-
-
 app.use('/api/auth', authRoutes);
-app.use('/api/hospital',hospitalRoute);
-app.use('/api/patient',patientRoute)
-app.use('/api/doctor',doctorRoute);
-app.use('/api/lab',labRoute)
-app.use('/api/firebase',firebaseRoute)
-app.use('/api/assistant',assistantRoute)
-app.use('/api/appointment',appointmentRoute)
-app.use('/api/ai',aiRouter)
-app.use('/api/record',medicalRecordRoutes)
-app.use('/api/stream',videoRoutes)
+app.use('/api/hospital', hospitalRoute);
+app.use('/api/patient', patientRoute);
+app.use('/api/doctor', doctorRoute);
+app.use('/api/lab', labRoute);
+app.use('/api/firebase', firebaseRoute);
+app.use('/api/assistant', assistantRoute);
+app.use('/api/appointment', appointmentRoute);
+app.use('/api/ai', aiRouter);
+app.use('/api/record', medicalRecordRoutes);
+app.use('/api/stream', videoRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok', database: 'connected' });
@@ -67,8 +62,6 @@ app.use((error, _req, res, _next) => {
   res.status(error.status || 500).json({ message: error.message || 'Internal server error' });
 });
 
-
-
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
@@ -82,5 +75,3 @@ async function startServer() {
 }
 
 startServer();
-
-

@@ -1,7 +1,8 @@
 import { Appointment } from "../models/Appointment.js";
-import {Patient} from "../models/Patient.js"
+import { Patient } from "../models/Patient.js"
 import { Assistant } from "../models/Assistant.js";
 import { Doctor } from "../models/Doctor.js";
+import { createAndSendNotification } from "../services/notification.js";
 
 const markPastAppointmentsCompleted = async (bookedBy) => {
   const startOfToday = new Date();
@@ -21,13 +22,13 @@ const markPastAppointmentsCompleted = async (bookedBy) => {
 export const createAppointment = async (req, res) => {
   try {
     const type = req.body.forPatient?.type;
-    const { doctorId, hospitalId, date, timeSlot ,contact , age , gender , mode } = req.body;
+    const { doctorId, hospitalId, date, timeSlot, contact, age, gender, mode } = req.body;
 
     if (!type || !doctorId || !hospitalId || !date || !timeSlot || !contact || !age || !gender) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    
+
 
     const patient = await Patient.findOne({ userId: req.user.id });
 
@@ -140,6 +141,12 @@ export const cancelAppointment = async (req, res) => {
     appointment.status = "cancelled";
     await appointment.save();
 
+    await createAndSendNotification({
+      userId: appointment.bookedBy,
+      title: "Appointment Cancelled",
+      body: "Your appointment has been cancelled successfully.",
+    });
+
     return res
       .status(200)
       .json({ message: "Appointment cancelled successfully." });
@@ -175,6 +182,32 @@ export const updateAppointmentStatus = async (req, res) => {
 
     appointment.status = status;
     await appointment.save();
+
+    await appointment.populate([
+      { path: "bookedBy", select: "name email" },
+      { path: "doctorId", populate: { path: "userId", select: "name email" } },
+    ]);
+
+    const patientUserId = appointment.bookedBy?._id || appointment.bookedBy;
+
+    if (["in-progress", "completed", "cancelled"].includes(status)) {
+      const titles = {
+        "in-progress": "Appointment In-Progress",
+        "completed": "Appointment Completed",
+        "cancelled": "Appointment Cancelled",
+      };
+      const bodies = {
+        "in-progress": "Your appointment status has been updated to in-progress. Please proceed to the doctor's room.",
+        "completed": "Your appointment has been marked as completed. Thank you for visiting.",
+        "cancelled": "Your appointment has been cancelled.",
+      };
+      await createAndSendNotification({
+        userId: patientUserId,
+        title: titles[status],
+        body: bodies[status],
+      });
+    }
+
     return res.status(200).json({ message: "Appointment status updated", appointment });
   } catch (error) {
     console.error("Error updating appointment status:", error);
@@ -189,7 +222,7 @@ export const getMyOnlineAppointments = async (req, res) => {
   try {
     await markPastAppointmentsCompleted(req.user.id);
 
-    const appointments = await Appointment.find({ bookedBy: req.user.id , mode : 'online' })
+    const appointments = await Appointment.find({ bookedBy: req.user.id, mode: 'online' })
       .populate({
         path: "doctorId",
         populate: {

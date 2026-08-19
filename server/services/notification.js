@@ -4,6 +4,10 @@ import User from "../models/User.js";
 export const notificationService = async ({ userId, title, body }) => {
   try {
 
+    if (!admin.apps.length) {
+      throw new Error("Firebase Admin SDK is not initialized. Check server environment configuration.");
+    }
+
     const user = await User.findById(userId);
     if (!user || !user.fcmToken) {
       throw new Error("FCM token not found for user");
@@ -13,8 +17,13 @@ export const notificationService = async ({ userId, title, body }) => {
     const message = {
       token: user.fcmToken,
       notification: {
-        title,
-        body,
+        title: title || "NirogCare Notification",
+        body: body || "You have a new update regarding your appointment.",
+      },
+      data: {
+        title: title || "NirogCare Notification",
+        body: body || "You have a new update regarding your appointment.",
+        timestamp: new Date().toISOString(),
       },
     };
 
@@ -30,5 +39,34 @@ export const notificationService = async ({ userId, title, body }) => {
       success: false,
       error: err.message || "Something went wrong",
     };
+  }
+};
+
+import Notification from "../models/Notification.js";
+
+export const createAndSendNotification = async ({ userId, title, body }) => {
+  try {
+    if (!userId) return null;
+
+    const newNotification = await Notification.create({
+      userId,
+      title: title || "NirogCare Notification",
+      body: body || "You have a new update regarding your appointment.",
+    });
+
+    let pushResult = { success: false };
+    try {
+      pushResult = await notificationService({ userId, title, body });
+    } catch (err) {
+      console.warn("FCM push notification error (non-fatal):", err);
+    }
+
+    return {
+      notification: newNotification,
+      pushResult,
+    };
+  } catch (error) {
+    console.error("Error in createAndSendNotification:", error);
+    return null;
   }
 };

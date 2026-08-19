@@ -1,233 +1,486 @@
-import React, { useState } from 'react';
+import React from "react";
 import {
+  Building2,
   User,
-  MapPin,
-  Save,
-  AlertCircle,
-  CheckCircle,
   Phone,
+  Mail,
   ShieldCheck,
-} from 'lucide-react';
-import { registerHospital } from '../services/hospitalsServices';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+  IdCard,
+  MapPin,
+  FileCheck,
+  Navigation,
+} from "lucide-react";
 
- // 🔁 Make sure this service exists
+const HospitalProfile = ({ hospitalProfile }) => {
 
-const HospitalRegistration = ({ onRegistered = () => {} }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    licenseNumber: '',
-    latitude: '',
-    longitude: '',
-  });
+  // This should only happen if the parent really didn't pass data.
+  // Your dashboard is already passing the registered hospital.
+  if (!hospitalProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] px-4">
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
-  const [locationActive, setLocationActive] = useState(false);
+        <div className="w-full max-w-lg bg-gray-900 rounded-2xl border border-red-500/20 p-8 text-center">
 
+          <Building2 className="w-12 h-12 text-red-400 mx-auto mb-4" />
 
-  const navigate = useNavigate();
+          <h2 className="text-2xl font-bold text-white">
+            Hospital Profile Unavailable
+          </h2>
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+          <p className="text-gray-400 mt-2">
+            Hospital information could not be loaded.
+          </p>
 
-  const handleLocationClick = () => {
-    setLocationActive(prev => !prev);
-    handleUseLocation();
-  };
+        </div>
 
-  const handleUseLocation = () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported.");
-    return;
+      </div>
+    );
   }
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      setFormData((prev) => ({ ...prev, latitude, longitude }));
-    },
-    (err) => {
-      console.error("Geolocation error:", err);
-      if (err.code === 1) alert("Permission denied. Please allow location access.");
-      else if (err.code === 2) alert("Location unavailable. Please check your connection or try again.");
-      else if (err.code === 3) alert("Location request timed out.");
-    }
-  );
-};
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { name, phone, address, licenseNumber, latitude, longitude } = formData;
-
-    if (!name || !phone || !address || !licenseNumber || !latitude || !longitude) {
-      setMessage("All required fields must be filled.");
-      setMessageType("error");
-      return;
-    }
-
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const response = await registerHospital(formData);
-      console.log(formData);
-      if(response.success){
-        navigate('/hospitalAdmin/dashboard')
-      }
-
-      setMessage(response.message || "Hospital registered successfully.");
-      setMessageType("success");
-      onRegistered();
-    } catch (error) {
-      const message = error?.data?.message || error?.message || error?.error || "An unexpected error occurred.";
-      console.error("Hospital registration failed:", error);
-      setMessage(message);
-      setMessageType("error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black text-white px-4">
-      <div className="w-full max-w-2xl">
-        <div className="bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-2xl shadow-2xl p-7 border border-green-500/20 backdrop-blur-sm relative">
-          
-          {/* Location Icon */}
-          <MapPin
-            size={28}
-            className={`absolute top-4 right-4 cursor-pointer transition-colors ${
-              locationActive ? 'text-emerald-400' : 'text-gray-400 hover:text-gray-200'
-            }`}
-            onClick={handleLocationClick}
-            title="Use My Current Location"
-          />
+    <div className="w-full max-w-4xl mx-auto">
 
-          <div className="text-center mb-6">
-            <div className="flex justify-center items-center gap-2 mb-1">
-              <ShieldCheck className="w-8 h-8 text-cyan-400" />
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent">
-                Hospital Registration
-              </h2>
-            </div>
-            <p className="text-gray-400 mt-1">Complete your hospital profile to get started</p>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 rounded-2xl p-6 mb-6">
+
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+
+          {/* Hospital Icon */}
+
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+
+            <Building2 className="w-10 h-10 text-emerald-400" />
+
           </div>
 
-          {/* Alert Message */}
-          {message && (
-            <div className={`flex items-center p-4 mb-4 rounded-xl text-sm font-medium border ${
-              messageType === 'success'
-                ? 'bg-green-900/30 text-green-200 border-green-500/50'
-                : 'bg-red-900/30 text-red-200 border-red-500/50'
-            }`}>
-              {messageType === 'success' ? <CheckCircle className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
-              {message}
-            </div>
-          )}
+          {/* Hospital Name */}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="text-sm text-gray-300">Hospital Name</label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Enter hospital name"
-              />
-            </div>
+          <div className="text-center sm:text-left flex-1">
 
-            <div>
-              <label className="text-sm text-gray-300">Phone Number</label>
-              <input
-                name="phone"
-                type="tel"
-                maxLength={10}
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Enter phone number"
-              />
-            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
 
-            <div>
-              <label className="text-sm text-gray-300">Address</label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                rows={2}
-                className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Enter hospital address"
-              />
-            </div>
+              <h1 className="text-3xl font-bold text-white">
+                {hospitalProfile.name}
+              </h1>
 
-            <div>
-              <label className="text-sm text-gray-300">License Number</label>
-              <input
-                name="licenseNumber"
-                value={formData.licenseNumber}
-                onChange={handleChange}
-                className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="License Number"
-              />
-            </div>
+              {hospitalProfile.isVerified && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-medium">
 
-            <div className="flex gap-4">
-              <div className="w-1/2">
-                <label className="text-sm text-gray-300">Latitude</label>
-                <input
-                  name="latitude"
-                  type="number"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600"
-                  placeholder="Latitude"
-                />
-              </div>
-              <div className="w-1/2">
-                <label className="text-sm text-gray-300">Longitude</label>
-                <input
-                  name="longitude"
-                  type="number"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  className="w-full p-3 rounded-xl bg-gray-800/50 text-white border border-gray-600"
-                  placeholder="Longitude"
-                />
-              </div>
-            </div>
+                  <ShieldCheck className="w-3.5 h-3.5" />
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 text-black ${
-                loading
-                  ? 'bg-gray-500/30 text-gray-300 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-green-400 hover:scale-[1.02]'
-              }`}
-            >
-              {loading ? 'Registering...' : (
-                <div className="flex items-center justify-center">
-                  <Save className="w-5 h-5 mr-2" />
-                  Register Hospital
-                </div>
+                  Verified
+
+                </span>
               )}
-            </button>
-          </form>
+
+            </div>
+
+            <p className="text-gray-400 mt-2">
+              Hospital Administration Profile
+            </p>
+
+            <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 text-gray-400 text-sm">
+
+              <MapPin className="w-4 h-4 text-emerald-400" />
+
+              <span>
+                {hospitalProfile.address || "Address not available"}
+              </span>
+
+            </div>
+
+          </div>
+
         </div>
+
       </div>
+
+
+      {/* =====================================================
+          BASIC INFORMATION
+      ===================================================== */}
+
+      <div className="bg-gray-900/60 border border-gray-700/50 rounded-2xl overflow-hidden mb-6">
+
+        <div className="p-6 border-b border-gray-700/50">
+
+          <div className="flex items-center gap-3">
+
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+
+              <User className="w-5 h-5 text-blue-400" />
+
+            </div>
+
+            <div>
+
+              <h2 className="text-xl font-semibold text-white">
+                Hospital Information
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Basic information about your hospital
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Hospital Name */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <Building2 className="w-4 h-4 text-emerald-400" />
+
+              <p className="text-sm text-gray-400">
+                Hospital Name
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium">
+              {hospitalProfile.name || "N/A"}
+            </p>
+
+          </div>
+
+
+          {/* Phone */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <Phone className="w-4 h-4 text-emerald-400" />
+
+              <p className="text-sm text-gray-400">
+                Phone Number
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium">
+              {hospitalProfile.phone || "N/A"}
+            </p>
+
+          </div>
+
+
+          {/* Email */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <Mail className="w-4 h-4 text-emerald-400" />
+
+              <p className="text-sm text-gray-400">
+                Email
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium break-all">
+              {hospitalProfile.userId?.email || "N/A"}
+            </p>
+
+          </div>
+
+
+          {/* Admin Name */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <User className="w-4 h-4 text-emerald-400" />
+
+              <p className="text-sm text-gray-400">
+                Admin Name
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium">
+              {hospitalProfile.userId?.name || "N/A"}
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          REGISTRATION INFORMATION
+      ===================================================== */}
+
+      <div className="bg-gray-900/60 border border-gray-700/50 rounded-2xl overflow-hidden mb-6">
+
+        <div className="p-6 border-b border-gray-700/50">
+
+          <div className="flex items-center gap-3">
+
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+
+              <FileCheck className="w-5 h-5 text-purple-400" />
+
+            </div>
+
+            <div>
+
+              <h2 className="text-xl font-semibold text-white">
+                Registration Details
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Official hospital registration information
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* License */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <FileCheck className="w-4 h-4 text-purple-400" />
+
+              <p className="text-sm text-gray-400">
+                License Number
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium">
+              {hospitalProfile.licenseNumber || "N/A"}
+            </p>
+
+          </div>
+
+
+          {/* Hospital ID */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <IdCard className="w-4 h-4 text-purple-400" />
+
+              <p className="text-sm text-gray-400">
+                Hospital ID
+              </p>
+
+            </div>
+
+            <p className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md 
+  bg-black/60 border border-gray-600/70 
+  text-gray-300 font-mono text-xs font-semibold 
+  tracking-[0.18em] uppercase 
+  shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></span>
+              Hidden for privacy
+            </p>
+
+          </div>
+
+
+          {/* Verification */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+
+              <p className="text-sm text-gray-400">
+                Verification Status
+              </p>
+
+            </div>
+
+            <p
+              className={
+                hospitalProfile.isVerified
+                  ? "text-green-400 font-medium"
+                  : "text-yellow-400 font-medium"
+              }
+            >
+              {hospitalProfile.isVerified
+                ? "Verified"
+                : "Pending Verification"}
+            </p>
+
+          </div>
+
+
+          {/* Created At */}
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+            <div className="flex items-center gap-3 mb-2">
+
+              <FileCheck className="w-4 h-4 text-purple-400" />
+
+              <p className="text-sm text-gray-400">
+                Registered On
+              </p>
+
+            </div>
+
+            <p className="text-white font-medium">
+
+              {hospitalProfile.createdAt
+                ? new Date(
+                  hospitalProfile.createdAt
+                ).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+                : "N/A"}
+
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          LOCATION
+      ===================================================== */}
+
+      <div className="bg-gray-900/60 border border-gray-700/50 rounded-2xl overflow-hidden">
+
+        <div className="p-6 border-b border-gray-700/50">
+
+          <div className="flex items-center gap-3">
+
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+
+              <MapPin className="w-5 h-5 text-cyan-400" />
+
+            </div>
+
+            <div>
+
+              <h2 className="text-xl font-semibold text-white">
+                Location
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Registered hospital location
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div className="p-6">
+
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-5">
+
+            <div className="flex items-start gap-4">
+
+              <MapPin className="w-5 h-5 text-cyan-400 mt-1" />
+
+              <div>
+
+                <p className="text-gray-400 text-sm mb-1">
+                  Address
+                </p>
+
+                <p className="text-white font-medium">
+                  {hospitalProfile.address || "N/A"}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* Coordinates */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+
+            <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+              <div className="flex items-center gap-3 mb-2">
+
+                <Navigation className="w-4 h-4 text-cyan-400" />
+
+                <p className="text-sm text-gray-400">
+                  Latitude
+                </p>
+
+              </div>
+
+              <p className="text-white font-medium">
+
+                {hospitalProfile.location?.coordinates?.[1] ??
+                  "N/A"}
+
+              </p>
+
+            </div>
+
+
+            <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
+
+              <div className="flex items-center gap-3 mb-2">
+
+                <Navigation className="w-4 h-4 text-cyan-400" />
+
+                <p className="text-sm text-gray-400">
+                  Longitude
+                </p>
+
+              </div>
+
+              <p className="text-white font-medium">
+
+                {hospitalProfile.location?.coordinates?.[0] ??
+                  "N/A"}
+
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 };
 
-export default HospitalRegistration;
+export default HospitalProfile;

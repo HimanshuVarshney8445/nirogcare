@@ -14,3 +14,9 @@ export async function callRoleApi(role, fcmToken = null) {
   const response = await api.patch("/api/auth/select-role", { role, fcmToken });
   return response.data;
 }
+
+export async function updateFcmTokenApi(fcmToken) {
+  const response = await api.patch("/api/auth/update-fcm-token", { fcmToken });
+  return response.data;
+}
+

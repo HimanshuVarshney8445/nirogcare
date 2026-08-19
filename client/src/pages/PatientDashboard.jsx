@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { useParams} from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import {
   getAllNearbyHospitals,
   getAllNearbyLabs,
   getMyAppointment,
   getMyLabAppointment,
 } from "../services/patientServices";
+import Notification from "../component/Notification";
 import HospitalAppointmentBooking from "../component/HospitalAppointmentBooking";
 import { LabAppointmentBooking } from "../component/LabsAppointmentBooking";
 import { logoutUser } from "../services/logoutService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getMedicalRecordsAPI } from "../services/medicalRecordServices";
+import { getMyNotificationsApi } from "../services/notificationServices";
 import LabReportComponent from "../component/LabReport";
 
 import {
@@ -53,18 +55,20 @@ import ThemeToggleSwitch from "../component/ThemeButton";
 import VideoCall from "../component/VideoCall";
 import { getOnlineApointments } from "../services/appointmentServices";
 import LiveComponentPatient from "../component/LiveComponentPatient";
+import { requestFCMToken, onForegroundMessage } from "../utils/firebaseConfig";
+import { updateFcmTokenApi } from "../api/authServices";
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
 
   const { tab } = useParams();
 
-const activeTab = tab || "home";
+  const activeTab = tab || "home";
 
-const handleTabChange = (tab) => {
-  navigate(`/patient/dashboard/${tab}`);
-};
-  const [notifications] = useState(3);
+  const handleTabChange = (tab) => {
+    navigate(`/patient/dashboard/${tab}`);
+  };
+  const [unreadCount, setUnreadCount] = useState(0);
   const [hospitals, setHospitals] = useState([]);
   const [labs, setLabs] = useState([]);
   const [userData, setUserData] = useState([]);
@@ -76,13 +80,30 @@ const handleTabChange = (tab) => {
   const [labReports, setLabReport] = useState([]);
   const [onlineAppointment, setOnlineAppointment] = useState([]);
 
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await getMyNotificationsApi();
+      if (response && response.success) {
+        setUnreadCount(response.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
+    }
+  }, []);
 
-  // Search state for records
+  useEffect(() => {
+    fetchUnreadCount();
 
+    const handleRefresh = () => fetchUnreadCount();
+    window.addEventListener("refreshNotifications", handleRefresh);
 
+    const interval = setInterval(fetchUnreadCount, 12000);
 
-
-
+    return () => {
+      window.removeEventListener("refreshNotifications", handleRefresh);
+      clearInterval(interval);
+    };
+  }, [fetchUnreadCount]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -102,57 +123,87 @@ const handleTabChange = (tab) => {
   }, []);
 
   useEffect(() => {
-  const fetchAllData = async () => {
-    setLoading(true);
-
-    try {
-      const [
-        userRes,
-        appointmentRes,
-        labAppointmentRes,
-      ] = await Promise.all([
-        getMe(),
-        getMyAppointment(),
-        getMyLabAppointment(),
-      ]);
-
-      // User data
-      if (userRes) {
-        setUserData(userRes);
+    const initFCM = async () => {
+      try {
+        const token = await requestFCMToken();
+        if (token) {
+          await updateFcmTokenApi(token);
+          console.log("Patient FCM token updated successfully");
+        }
+      } catch (err) {
+        console.error("FCM Initialization error:", err);
       }
+    };
 
-      // Doctor appointments
-      if (appointmentRes) {
-        setAppointment(
-          appointmentRes?.appointments || []
+    initFCM();
+
+    const unsubscribe = onForegroundMessage((payload) => {
+      const title = payload.notification?.title || payload.data?.title || "Notification";
+      const body = payload.notification?.body || payload.data?.body || "You have a new update.";
+      toast.info(`${title}: ${body}`, {
+        duration: 5000,
+      });
+      fetchUnreadCount();
+      window.dispatchEvent(new Event("refreshNotifications"));
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+
+      try {
+        const [
+          userRes,
+          appointmentRes,
+          labAppointmentRes,
+        ] = await Promise.all([
+          getMe(),
+          getMyAppointment(),
+          getMyLabAppointment(),
+        ]);
+
+        // User data
+        if (userRes) {
+          setUserData(userRes);
+        }
+
+        // Doctor appointments
+        if (appointmentRes) {
+          setAppointment(
+            appointmentRes?.appointments || []
+          );
+        }
+
+        // Lab appointments
+        if (labAppointmentRes) {
+          setLabAppointment(
+            labAppointmentRes || []
+          );
+        }
+
+      } catch (error) {
+        console.log(
+          "Error fetching dashboard data",
+          error
         );
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Lab appointments
-      if (labAppointmentRes) {
-        setLabAppointment(
-          labAppointmentRes || []
-        );
-      }
-
-    } catch (error) {
-      console.log(
-        "Error fetching dashboard data",
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchAllData();
-}, []);
+    fetchAllData();
+  }, []);
 
   const handleLogout = async () => {
     const response = await logoutUser();
     if (response?.status === 200) {
       console.log("Logout successfully !!");
-      toast.success("Logout successful!",{
+      toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
       });
@@ -302,6 +353,7 @@ const handleTabChange = (tab) => {
     { id: "records", label: "Medical Record", icon: FileText },
     { id: "reports", label: "Lab Report", icon: BarChart3 },
     { id: "live", label: "Live Chat", icon: Monitor },
+    { id: "notifications", label: "Notifications", icon: Bell },
     { id: "ai", label: "AI Assistant", icon: BotMessageSquare },
   ];
 
@@ -619,12 +671,12 @@ const handleTabChange = (tab) => {
                           <div className="flex justify-end">
                             <span
                               className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Completed"
-                                  ? "bg-green-400/20 text-green-400"
-                                  : appointment.status === "Pending"
-                                    ? "bg-yellow-400/20 text-yellow-400"
-                                    : appointment.status === "Cancelled"
-                                      ? "bg-red-400/20 text-red-400"
-                                      : "bg-blue-400/20 text-blue-400"
+                                ? "bg-green-400/20 text-green-400"
+                                : appointment.status === "Pending"
+                                  ? "bg-yellow-400/20 text-yellow-400"
+                                  : appointment.status === "Cancelled"
+                                    ? "bg-red-400/20 text-red-400"
+                                    : "bg-blue-400/20 text-blue-400"
                                 }`}
                             >
                               {appointment.status}
@@ -682,6 +734,12 @@ const handleTabChange = (tab) => {
           <div className="space-y-6">
             <LiveComponentPatient onlineAppointment={onlineAppointment} name={userData?.user?.name} />
 
+          </div>
+        );
+      case "notifications":
+        return (
+          <div className="space-y-6">
+            <Notification />
           </div>
         );
       case "ai":
@@ -751,16 +809,16 @@ const handleTabChange = (tab) => {
                   {activeTab === item.id && item.id !== "ai" && (
                     <span
                       className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                          ? "ml-auto"
-                          : "absolute right-1.5 bottom-1.5"
+                        ? "ml-auto"
+                        : "absolute right-1.5 bottom-1.5"
                         }`}
                     ></span>
                   )}
                   {activeTab === item.id && item.id === "ai" && (
                     <span
                       className={`w-1.5 h-1.5 bg-emerald-500 rounded-full ${toggleSideBar
-                          ? "ml-auto"
-                          : "absolute right-1.5 bottom-1.5"
+                        ? "ml-auto"
+                        : "absolute right-1.5 bottom-1.5"
                         }`}
                     ></span>
                   )}
@@ -806,11 +864,15 @@ const handleTabChange = (tab) => {
               </div>
               <div className="flex items-center space-x-4">
 
-                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                <button
+                  onClick={() => handleTabChange("notifications")}
+                  className="relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  title="View Notifications"
+                >
                   <Bell className="w-5 h-5" />
-                  {notifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {notifications}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
                     </span>
                   )}
                 </button>

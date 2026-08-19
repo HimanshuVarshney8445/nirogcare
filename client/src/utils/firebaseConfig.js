@@ -1,6 +1,9 @@
 import { initializeApp } from "firebase/app";
-import {getMessaging,getToken} from "firebase/messaging"
-
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+} from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,30 +15,48 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-export default firebaseConfig;
-
-
 const vapidKey = import.meta.env.VITE_VAPID_KEY;
 
+console.log("Firebase project:", firebaseConfig.projectId);
+console.log("VAPID key exists:", !!vapidKey);
+console.log("VAPID key length:", vapidKey?.length);
+
 const app = initializeApp(firebaseConfig);
-
 const messaging = getMessaging(app);
-
 
 export const requestFCMToken = async () => {
   try {
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      alert("Notification permission not granted.");
+    if (!("Notification" in window)) {
+      console.warn("Notifications are not supported.");
       return null;
     }
 
-    const token = await getToken(messaging, { vapidKey });
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      console.warn("Notification permission not granted.");
+      return null;
+    }
+
+    const registration =
+      await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js"
+      );
+
+    console.log(
+      "Service worker registered:",
+      registration
+    );
+
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: registration,
+    });
+
     console.log("FCM Token:", token);
 
     if (!token) {
-      console.warn("Failed to get FCM token. Token is null.");
+      console.warn("FCM token is null");
       return null;
     }
 
@@ -44,4 +65,14 @@ export const requestFCMToken = async () => {
     console.error("Error getting FCM token:", error);
     return null;
   }
+};
+
+export const onForegroundMessage = (callback) => {
+  return onMessage(messaging, (payload) => {
+    console.log("Foreground Message:", payload);
+
+    if (callback) {
+      callback(payload);
+    }
+  });
 };

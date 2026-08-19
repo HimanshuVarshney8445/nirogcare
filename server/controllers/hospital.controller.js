@@ -8,7 +8,7 @@ import User from "../models/User.js";
 export const registerHospital = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, phone, address, licenseNumber, longitude , latitude } = req.body;
+    const { name, phone, address, licenseNumber, longitude, latitude } = req.body;
 
     if (!name || !phone || !address || !licenseNumber || !longitude || !latitude) {
       return res.status(400).json({ error: "All required fields must be provided." });
@@ -36,6 +36,7 @@ export const registerHospital = async (req, res) => {
         type: "Point",
         coordinates: [longitudeValue, latitudeValue],
       },
+      isVerified: true
     });
 
     await hospital.save();
@@ -62,7 +63,7 @@ export const getMyHospitalProfile = async (req, res) => {
 
     const hospital = await Hospital.findOne({ userId }).populate({
       path: "userId",
-      select: "name email" 
+      select: "name email"
     });
 
     if (!hospital) {
@@ -277,11 +278,11 @@ export const getAllHospitals = async (req, res) => {
     const query = req.query.q ? req.query.q.trim() : "";
     const filter = query
       ? {
-          $or: [
-            { name: { $regex: query, $options: "i" } },
-            { address: { $regex: query, $options: "i" } },
-          ],
-        }
+        $or: [
+          { name: { $regex: query, $options: "i" } },
+          { address: { $regex: query, $options: "i" } },
+        ],
+      }
       : {};
 
     const hospitals = await Hospital.find(filter)

@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import { Assistant } from "../models/Assistant.js";
 import { MedicalRecord } from "../models/MedicalRecord.js";
 import { Hospital } from "../models/Hospital.js";
+import { createAndSendNotification } from "../services/notification.js";
 
 
 export const doctorProfile = async (req, res) => {
@@ -193,7 +194,14 @@ export const addMedicineRecord = async (req, res) => {
 
     await record.save();
 
-    await Appointment.findByIdAndUpdate(appointmentId, { status: "completed" });
+    const appt = await Appointment.findByIdAndUpdate(appointmentId, { status: "completed" });
+    if (appt && appt.bookedBy) {
+      await createAndSendNotification({
+        userId: appt.bookedBy,
+        title: "Appointment Completed",
+        body: "Your appointment has been completed. Your medical record and prescription are now available.",
+      });
+    }
 
     res.status(201).json({
       message: "Medicine record saved successfully.",

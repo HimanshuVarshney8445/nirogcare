@@ -38,8 +38,8 @@ const doctorSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    education : {
-      type : String,
+    education: {
+      type: String,
     }
   },
   { timestamps: true }

@@ -1,25 +1,49 @@
-/* global firebase */
-importScripts('https://www.gstatic.com/firebasejs/8.2.0/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/8.2.0/firebase-messaging.js');
+importScripts(
+  "https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"
+);
+
+importScripts(
+  "https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"
+);
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCtGocvbP6NMxTT8LK5VJFAJaZXD0PLsFk",
-  authDomain: "nirogcare-in.firebaseapp.com",
-  projectId: "nirogcare-in",
-  storageBucket: "nirogcare-in.firebasestorage.app",
-  messagingSenderId: "1039659631079",
-  appId: "1:1039659631079:web:590680cbc51d97b00e3d42",
-  measurementId: "G-SEZFH495VL"
+  apiKey: "AIzaSyD0dSaW5WWgGFLuUZHJeJBqh3FxjbfV3kk",
+  authDomain: "nirogcare-94972.firebaseapp.com",
+  projectId: "nirogcare-94972",
+  storageBucket: "nirogcare-94972.firebasestorage.app",
+  messagingSenderId: "751795986910",
+  appId: "1:751795986910:web:75d3b687bf6d1b23257d4f",
+  measurementId: "G-5R2HQVB4R7"
 };
 
 firebase.initializeApp(firebaseConfig);
 
-//retrive firebase messaging
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function (payload){
-    console.log("Retrive Background Message",payload);
-    
-})
+messaging.onBackgroundMessage((payload) => {
+  console.log(
+    "Background message received:",
+    payload
+  );
 
+  const notificationTitle =
+    payload.notification?.title ||
+    payload.data?.title ||
+    "NirogCare Notification";
 
+  const notificationOptions = {
+    body:
+      payload.notification?.body ||
+      payload.data?.body ||
+      "You have a new update from NirogCare.",
+
+    icon: "/healthcare.png",
+
+    data: payload.data || {},
+  };
+
+  self.registration.showNotification(
+    notificationTitle,
+    notificationOptions
+  );
+});
