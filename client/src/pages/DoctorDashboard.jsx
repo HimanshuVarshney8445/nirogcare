@@ -612,15 +612,15 @@ const DoctorDashboard = () => {
                 )}
               </button>
               <div
-                onClick={() => navigate('/doctor/dashboard/profile')}
-                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-all duration-200"
+                onClick = {() => navigate('/doctor/dashboard/profile')}
+                className="flex items-center space-x-2 cursor-pointer group"
               >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
                   <User className="w-4 h-4 text-white" />
                 </div>
 
                 <span className="text-white font-medium">
-                  Dr. {doctorInfo.name}
+                  Dr. { doctorInfo.name }
                 </span>
               </div>
             </div>
