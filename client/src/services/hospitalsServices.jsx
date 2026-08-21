@@ -34,3 +34,8 @@ export async function getAllAssistantsForHospital() {
   const response = await api.get("/api/hospital/all-assistants");
   return response.data;
 }
+
+export async function addPatientToDoctor(data) {
+  const response = await api.post("/api/hospital/add-patient", data);
+  return response.data;
+}

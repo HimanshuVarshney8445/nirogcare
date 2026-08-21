@@ -6,6 +6,7 @@ import {
   getAllHospitalPatients,
   getAllAssistantsForHospital,
   getAllHospitals,
+  addPatientToDoctor,
 } from "../controllers/hospital.controller.js";
 import { allowRoles, protect } from "../middlewares/auth.middleware.js";
 
@@ -29,6 +30,8 @@ router.get("/stats", getPatientStats);
 
 router.get("/patients", getAllHospitalPatients);
 
-router.get('/all-assistants', getAllAssistantsForHospital)
+router.get('/all-assistants', getAllAssistantsForHospital);
+
+router.post('/add-patient', addPatientToDoctor);
 
 export default router;

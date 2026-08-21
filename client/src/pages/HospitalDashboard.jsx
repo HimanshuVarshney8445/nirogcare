@@ -3,30 +3,20 @@ import { useParams } from 'react-router-dom';
 import {
   Home,
   Users,
-  FlaskConical,
   UserCheck,
   UserPlus,
   LogOut,
   User,
-  Bell,
   Activity,
-  Bed,
-  Calendar,
-  TrendingUp,
   AlertTriangle,
   Clock,
   Search,
-  Filter,
   Plus,
-  Heart,
   Stethoscope,
   Building,
   PanelLeft,
-  Phone,
   Mail,
-  Scale,
   IdCard,
-  MapPin
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logoutUser } from '../services/logoutService';
@@ -39,6 +29,7 @@ import DrPatientsListByHospital from '../component/DrPatientsListByHospital';
 import { getAllHospitalPatients } from '../services/hospitalsServices';
 import { getAllAssistantsForHospital } from '../services/hospitalsServices';
 import AllAssistants from '../component/AllAssistants';
+import AddPatientModal from '../component/AddPatientModal';
 
 const HospitalDashboard = () => {
   const { tab } = useParams();
@@ -48,7 +39,7 @@ const HospitalDashboard = () => {
   const handleTabChange = (tab) => {
     navigate(`/hospitalAdmin/dashboard/${tab}`);
   };
-  const [notifications] = useState(5);
+
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [hospitalProfile, setHospitalProfile] = useState(null);
   const [doctorRequests, setDoctorRequests] = useState([]);
@@ -60,6 +51,7 @@ const HospitalDashboard = () => {
   const [allAssistants, setAllAssistants] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [patientsLength, setPatientsLength] = useState(0);
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
 
 
   useEffect(() => {
@@ -381,7 +373,10 @@ const HospitalDashboard = () => {
                       className="bg-gray-700/50 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-blue-500 focus:outline-none"
                     />
                   </div>
-                  <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                  <button
+                    onClick={() => setShowAddPatientModal(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
                     <Plus className="w-4 h-4" />
                     <span>Add Patient</span>
                   </button>
@@ -430,10 +425,10 @@ const HospitalDashboard = () => {
 
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${patient.status === "Completed"
-                              ? "bg-green-400/20 text-green-400"
-                              : patient.status === "In Progress"
-                                ? "bg-yellow-400/20 text-yellow-400"
-                                : "bg-blue-400/20 text-blue-400"
+                            ? "bg-green-400/20 text-green-400"
+                            : patient.status === "In Progress"
+                              ? "bg-yellow-400/20 text-yellow-400"
+                              : "bg-blue-400/20 text-blue-400"
                             }`}
                         >
                           {patient.status}
@@ -744,7 +739,7 @@ const HospitalDashboard = () => {
               <div className="flex items-center space-x-4">
 
                 {/* Notifications */}
-                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                {/* <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
                   <Bell className="w-5 h-5" />
 
                   {notifications > 0 && (
@@ -752,7 +747,7 @@ const HospitalDashboard = () => {
                       {notifications}
                     </span>
                   )}
-                </button>
+                </button> */}
 
                 {/* Hospital Admin */}
                 <div
@@ -777,6 +772,14 @@ const HospitalDashboard = () => {
         <main className="flex-1 p-6 overflow-y-auto">
           {renderContent()}
         </main>
+
+        {/* Add Patient Modal */}
+        <AddPatientModal
+          isOpen={showAddPatientModal}
+          onClose={() => setShowAddPatientModal(false)}
+          onSuccess={fetchAllHospitalPatients}
+          hospitalId={hospitalProfile?._id}
+        />
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ router.patch("/requests/:doctorId",allowRoles("hospitalAdmin"),updateDoctorReque
 
 router.get("/medicine/:patientId", allowRoles("doctor"), getMedicineRecords);
 
-router.get("/getAllDoctors", allowRoles("patient", "assistant"), getDoctorsByHospital)
+router.get("/getAllDoctors", allowRoles("patient", "assistant", "hospitalAdmin"), getDoctorsByHospital)
 
 router.get("/getAllDrAppointments", allowRoles("doctor"), allTodaysAppointment);
 

@@ -10,7 +10,8 @@ export const notificationService = async ({ userId, title, body }) => {
 
     const user = await User.findById(userId);
     if (!user || !user.fcmToken) {
-      throw new Error("FCM token not found for user");
+      // User has no registered device — skip push notification silently
+      return { success: false, error: "FCM token not found for user" };
     }
 
     // Build FCM message

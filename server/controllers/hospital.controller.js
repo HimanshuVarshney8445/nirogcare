@@ -2,7 +2,9 @@ import { Hospital } from "../models/Hospital.js";
 import { Assistant } from "../models/Assistant.js";
 import { Doctor } from "../models/Doctor.js";
 import { Appointment } from "../models/Appointment.js";
+import { Patient } from "../models/Patient.js";
 import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
 // Register a hospital
 export const registerHospital = async (req, res) => {
@@ -472,3 +474,128 @@ export const getAllHospitals = async (req, res) => {
     });
   }
 };
+
+
+// ============================================================
+// HOSPITAL ADMIN: ADD WALK-IN PATIENT TO A DOCTOR
+// ============================================================
+
+export const addPatientToDoctor = async (req, res) => {
+  try {
+    const adminUserId = req.user.id;
+
+    const {
+      name,
+      phone,
+      age,
+      gender,
+      doctorId,
+      date,
+      timeSlot,
+      mode,
+    } = req.body;
+
+    // --- Basic validation ---
+    if (
+      !name ||
+      !phone ||
+      !age ||
+      !gender ||
+      !doctorId ||
+      !date ||
+      !timeSlot ||
+      !mode
+    ) {
+      return res.status(400).json({
+        error: "All fields are required.",
+      });
+    }
+
+    // --- Find the admin's hospital ---
+    const hospital = await Hospital.findOne({ userId: adminUserId });
+
+    if (!hospital) {
+      return res.status(404).json({
+        error: "Hospital not found for this admin.",
+      });
+    }
+
+    // --- Verify doctor belongs to this hospital and is approved ---
+    const doctor = await Doctor.findOne({
+      _id: doctorId,
+      hospitalId: hospital._id,
+      status: "approved",
+    });
+
+    if (!doctor) {
+      return res.status(404).json({
+        error: "Doctor not found or not approved in your hospital.",
+      });
+    }
+
+    // --- Find or create a stub user for this walk-in patient ---
+    // We key off the phone number to avoid creating duplicate stubs.
+    let stubUser = await User.findOne({ phone });
+
+    if (!stubUser) {
+      const placeholderEmail = `patient_${phone}_${Date.now()}@nirogcare.internal`;
+      const hashedPassword = await bcrypt.hash(
+        Math.random().toString(36),
+        10
+      );
+
+      stubUser = await User.create({
+        name,
+        email: placeholderEmail,
+        phone,
+        password: hashedPassword,
+        role: "patient",
+        isVerified: false,
+      });
+    }
+
+    // --- Find or create a Patient profile linked to the stub user ---
+    let patient = await Patient.findOne({ userId: stubUser._id });
+
+    if (!patient) {
+      patient = await Patient.create({ userId: stubUser._id });
+
+      // Ensure the user role is set to patient
+      await User.findByIdAndUpdate(stubUser._id, { role: "patient" });
+    }
+
+    // --- Create the appointment ---
+    const appointment = await Appointment.create({
+      bookedBy: stubUser._id,
+      forPatient: { type: "self" },
+      patientId: patient._id,
+      age,
+      gender,
+      doctorId: doctor._id,
+      hospitalId: hospital._id,
+      date: new Date(date),
+      contact: phone,
+      timeSlot,
+      mode,
+      status: "booked",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Patient added to doctor successfully.",
+      appointment,
+    });
+  } catch (error) {
+    console.error("Error adding patient to doctor:", error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        error: "A conflict occurred. Please check the patient details.",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Failed to add patient.",
+    });
+  }
+};
