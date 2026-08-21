@@ -7,7 +7,9 @@ import {
   getDoctorsByHospital,
   allTodaysAppointment,
   getDoctorProfile,
-  allTodaysOnlineAppointment
+  allTodaysOnlineAppointment,
+  getDoctorRequests,
+  updateDoctorRequest,
 } from "../controllers/doctor.controller.js";
 import { allowRoles, protect } from "../middlewares/auth.middleware.js";
 
@@ -25,6 +27,10 @@ router.get("/patients", allowRoles("doctor"), todaysPatients);
 
 
 router.post("/medicine", allowRoles("doctor"), addMedicineRecord);
+
+router.get("/requests",allowRoles("hospitalAdmin"),getDoctorRequests);
+
+router.patch("/requests/:doctorId",allowRoles("hospitalAdmin"),updateDoctorRequest);
 
 
 router.get("/medicine/:patientId", allowRoles("doctor"), getMedicineRecords);

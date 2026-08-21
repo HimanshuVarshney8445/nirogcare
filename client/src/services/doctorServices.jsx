@@ -10,6 +10,20 @@ export async function getDoctorProfileApi() {
   return response.data;
 }
 
+export async function getDoctorRequestsApi() {
+  const response = await api.get("/api/doctor/requests");
+  return response.data;
+}
+
+export async function updateDoctorRequestApi(doctorId, status) {
+  const response = await api.patch(
+    `/api/doctor/requests/${doctorId}`,
+    { status }
+  );
+
+  return response.data;
+}
+
 export async function todaysPatientsApi() {
   const response = await api.get("/api/doctor/getAllDrAppointments");
   return response.data;

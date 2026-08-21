@@ -8,22 +8,47 @@ import User from "../models/User.js";
 export const registerHospital = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, phone, address, licenseNumber, longitude, latitude } = req.body;
 
-    if (!name || !phone || !address || !licenseNumber || !longitude || !latitude) {
-      return res.status(400).json({ error: "All required fields must be provided." });
+    const {
+      name,
+      phone,
+      address,
+      licenseNumber,
+      longitude,
+      latitude,
+    } = req.body;
+
+    if (
+      !name ||
+      !phone ||
+      !address ||
+      !licenseNumber ||
+      !longitude ||
+      !latitude
+    ) {
+      return res.status(400).json({
+        error: "All required fields must be provided.",
+      });
     }
 
     const existingHospital = await Hospital.findOne({ userId });
+
     if (existingHospital) {
-      return res.status(400).json({ error: "Hospital already registered." });
+      return res.status(400).json({
+        error: "Hospital already registered.",
+      });
     }
 
     const longitudeValue = parseFloat(longitude);
     const latitudeValue = parseFloat(latitude);
 
-    if (Number.isNaN(longitudeValue) || Number.isNaN(latitudeValue)) {
-      return res.status(400).json({ error: "Invalid latitude or longitude values." });
+    if (
+      Number.isNaN(longitudeValue) ||
+      Number.isNaN(latitudeValue)
+    ) {
+      return res.status(400).json({
+        error: "Invalid latitude or longitude values.",
+      });
     }
 
     const hospital = new Hospital({
@@ -32,30 +57,46 @@ export const registerHospital = async (req, res) => {
       phone,
       address,
       licenseNumber,
+
       location: {
         type: "Point",
         coordinates: [longitudeValue, latitudeValue],
       },
-      isVerified: true
+
+      // Hospital itself is verified after registration
+      isVerified: true,
     });
 
     await hospital.save();
 
-    // Ensure user role is updated to hospitalAdmin
-    await User.findByIdAndUpdate(userId, { role: "hospitalAdmin" });
+    // Update user role
+    await User.findByIdAndUpdate(userId, {
+      role: "hospitalAdmin",
+    });
 
-    res.status(201).json({ message: "Hospital registered successfully.", hospital, success: true });
+    res.status(201).json({
+      message: "Hospital registered successfully.",
+      hospital,
+      success: true,
+    });
   } catch (error) {
     console.error("Error registering hospital:", error);
+
     if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyPattern || {})[0] || "Hospital";
-      return res.status(400).json({ error: `${duplicateField} already exists.` });
+      const duplicateField =
+        Object.keys(error.keyPattern || {})[0] || "Hospital";
+
+      return res.status(400).json({
+        error: `${duplicateField} already exists.`,
+      });
     }
-    res.status(500).json({ error: "Failed to register hospital." });
+
+    res.status(500).json({
+      error: "Failed to register hospital.",
+    });
   }
 };
 
-// Get hospital profile for logged-in admin
 // Get hospital profile for logged-in admin
 export const getMyHospitalProfile = async (req, res) => {
   try {
@@ -63,50 +104,79 @@ export const getMyHospitalProfile = async (req, res) => {
 
     const hospital = await Hospital.findOne({ userId }).populate({
       path: "userId",
-      select: "name email"
+      select: "name email",
     });
 
     if (!hospital) {
-      return res.status(404).json({ error: "Hospital not found." });
+      return res.status(404).json({
+        error: "Hospital not found.",
+      });
     }
 
-    res.status(200).json({ hospital });
+    res.status(200).json({
+      hospital,
+    });
   } catch (error) {
     console.error("Error fetching hospital profile:", error);
-    res.status(500).json({ error: "Failed to fetch hospital profile." });
+
+    res.status(500).json({
+      error: "Failed to fetch hospital profile.",
+    });
   }
 };
 
 
-// Get total patients and patient counts by doctor department
+// ============================================================
+// GET ACTIVE DOCTORS + PATIENT STATS
+// ============================================================
+
 export const getPatientStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find hospital by logged-in user ID
+    // Find hospital belonging to logged-in hospital admin
     const hospital = await Hospital.findOne({ userId });
+
     if (!hospital) {
-      return res.status(404).json({ error: "Hospital not found." });
+      return res.status(404).json({
+        error: "Hospital not found.",
+      });
     }
 
-    // Get all doctors under this hospital, and populate their user name
-    const doctors = await Doctor.find({ hospitalId: hospital._id }).populate({
+    const doctors = await Doctor.find({
+      hospitalId: hospital._id,
+
+      // Only active doctors
+      status: "approved",
+      // isVerified: true,
+    }).populate({
       path: "userId",
-      select: "name", // get doctor name from User model
+      select: "name",
     });
 
-    const doctorIds = doctors.map((doc) => doc._id);
+    const doctorIds = doctors.map((doctor) => doctor._id);
 
-    // Get appointments linked to these doctors
-    const appointments = await Appointment.find({ doctorId: { $in: doctorIds } }).populate({
-      path: "patientId",
-      populate: {
-        path: "userId",
-        select: "name phone", // get patient name & phone from User model
-      },
-    });
+    /*
+      If there are no approved doctors, don't make
+      an unnecessary appointment query.
+    */
+    let appointments = [];
 
-    // Initialize mapping of doctors to their patients
+    if (doctorIds.length > 0) {
+      appointments = await Appointment.find({
+        doctorId: {
+          $in: doctorIds,
+        },
+      }).populate({
+        path: "patientId",
+        populate: {
+          path: "userId",
+          select: "name phone",
+        },
+      });
+    }
+
+    // Mapping doctor -> patients
     const doctorPatientsMap = {};
 
     for (const doctor of doctors) {
@@ -118,23 +188,30 @@ export const getPatientStats = async (req, res) => {
       };
     }
 
-    // Group patients under each doctor (avoiding duplicates)
+    // Group patients under their doctors
     for (const appointment of appointments) {
-      const doctorId = appointment.doctorId.toString();
+      const doctorId = appointment.doctorId?.toString();
+
       const patient = appointment.patientId;
 
-      if (patient && patient.userId && doctorPatientsMap[doctorId]) {
+      if (
+        patient &&
+        patient.userId &&
+        doctorPatientsMap[doctorId]
+      ) {
         const patientUser = patient.userId;
 
         // Avoid duplicate patients for same doctor
-        const alreadyAdded = doctorPatientsMap[doctorId].patients.some(
-          (p) => p._id.toString() === patient._id.toString()
-        );
+        const alreadyAdded =
+          doctorPatientsMap[doctorId].patients.some(
+            (p) =>
+              p._id.toString() === patient._id.toString()
+          );
 
         if (!alreadyAdded) {
           doctorPatientsMap[doctorId].patients.push({
-            _id: patient._id,            // patient schema ID
-            userId: patientUser._id,     // user ID from User model
+            _id: patient._id,
+            userId: patientUser._id,
             name: patientUser.name,
             phone: patientUser.phone,
             age: appointment.age,
@@ -145,82 +222,144 @@ export const getPatientStats = async (req, res) => {
       }
     }
 
-    // Final list of doctors with their patients
-    const doctorsWithPatients = Object.values(doctorPatientsMap);
+    const doctorsWithPatients =
+      Object.values(doctorPatientsMap);
 
     res.status(200).json({
       totalDoctors: doctorsWithPatients.length,
       doctors: doctorsWithPatients,
     });
   } catch (error) {
-    console.error("Error fetching doctor-patient data:", error);
-    res.status(500).json({ error: "Failed to fetch doctor-wise patient stats." });
+    console.error(
+      "Error fetching doctor-patient data:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to fetch doctor-wise patient stats.",
+    });
   }
 };
 
+
+// ============================================================
+// GET ALL HOSPITAL PATIENTS
+// ============================================================
 
 export const getAllHospitalPatients = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Find the hospital linked to this user
+    // Find hospital linked to this user
     const hospital = await Hospital.findOne({ userId });
+
     if (!hospital) {
-      return res.status(404).json({ error: "Hospital not found." });
+      return res.status(404).json({
+        error: "Hospital not found.",
+      });
     }
 
-    // Fetch all appointments for this hospital
-    const appointments = await Appointment.find({ hospitalId: hospital._id })
+    // Fetch appointments for this hospital
+    const appointments = await Appointment.find({
+      hospitalId: hospital._id,
+    })
       .populate({
         path: "patientId",
         populate: {
           path: "userId",
-          select: "name phone", // Only fetch name & phone from user
+          select: "name phone",
         },
       })
       .populate({
         path: "doctorId",
+        match: {
+          status: "approved",
+          // isVerified: true,
+        },
         populate: {
           path: "userId",
           select: "name",
         },
-        select: "specialization userId",
+        select: "specialization userId status isVerified",
       });
 
-    // Format appointment list
-    const patientAppointments = appointments.map((appointment) => {
-      const patient = appointment.patientId;
-      const user = patient?.userId;
+    /*
+      Remove appointments whose doctor is not active.
 
-      return {
-        appointmentId: appointment._id,
-        patientId: patient?._id,
-        userId: user?._id,
-        name: user?.name,
-        phone: user?.phone,
-        age: appointment?.age,
-        gender: appointment?.gender,
-        address: undefined,
-        doctorName: appointment.doctorId?.userId?.name,
-        specialization: appointment.doctorId?.specialization,
-        appointmentDate: appointment.date,
-        status: appointment.status,
-      };
-    });
+      populate().match() makes doctorId null when the doctor
+      is pending/rejected/unverified.
+    */
+    const activeAppointments = appointments.filter(
+      (appointment) => appointment.doctorId
+    );
+
+    const patientAppointments = activeAppointments.map(
+  (appointment) => {
+    const patient = appointment.patientId;
+    const user = patient?.userId;
+
+    return {
+      appointmentId: appointment._id,
+
+      patientId: patient?._id,
+
+      userId: user?._id,
+
+      name: user?.name,
+
+      // Phone number provided when THIS appointment was created
+      phone: appointment.contact,
+
+      age: appointment?.age,
+
+      gender: appointment?.gender,
+
+      address: undefined,
+
+      doctorName:
+        appointment.doctorId?.userId?.name,
+
+      specialization:
+        appointment.doctorId?.specialization,
+
+      appointmentDate: appointment.date,
+
+      time: appointment.timeSlot,
+
+      status: appointment.status,
+
+      mode: appointment.mode,
+    };
+  }
+);
 
     res.status(200).json({
-      totalAppointments: patientAppointments.length,
+      totalAppointments:
+        patientAppointments.length,
+
       appointments: patientAppointments,
     });
   } catch (error) {
-    console.error("Error fetching hospital patients:", error);
-    res.status(500).json({ error: "Failed to fetch appointment details." });
+    console.error(
+      "Error fetching hospital patients:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to fetch appointment details.",
+    });
   }
 };
 
 
+// ============================================================
+// GET ALL ASSISTANTS FOR HOSPITAL
+// ============================================================
 
-export const getAllAssistantsForHospital = async (req, res) => {
+export const getAllAssistantsForHospital = async (
+  req,
+  res
+) => {
   const userId = req.user?.id;
 
   if (!userId) {
@@ -232,7 +371,9 @@ export const getAllAssistantsForHospital = async (req, res) => {
 
   try {
     // Find hospital from logged-in user
-    const hospital = await Hospital.findOne({ userId });
+    const hospital = await Hospital.findOne({
+      userId,
+    });
 
     if (!hospital) {
       return res.status(404).json({
@@ -241,8 +382,10 @@ export const getAllAssistantsForHospital = async (req, res) => {
       });
     }
 
-    // Fetch all assistants for that hospital
-    const assistants = await Assistant.find({ hospitalId: hospital._id })
+    // Fetch assistants for this hospital
+    const assistants = await Assistant.find({
+      hospitalId: hospital._id,
+    })
       .populate({
         path: "doctorId",
         populate: {
@@ -250,7 +393,8 @@ export const getAllAssistantsForHospital = async (req, res) => {
           model: "User",
           select: "name email",
         },
-        select: "specialization gender userId",
+        select:
+          "specialization gender userId status isVerified",
       })
       .populate({
         path: "userId",
@@ -264,43 +408,67 @@ export const getAllAssistantsForHospital = async (req, res) => {
       assistants,
     });
   } catch (error) {
-    console.error("Error fetching assistants:", error);
+    console.error(
+      "Error fetching assistants:",
+      error
+    );
+
     res.status(500).json({
       success: false,
-      message: "Server error while fetching assistants",
+      message:
+        "Server error while fetching assistants",
       error: error.message,
     });
   }
 };
 
+
+// ============================================================
+// GET ALL HOSPITALS
+// ============================================================
+
 export const getAllHospitals = async (req, res) => {
   try {
-    const query = req.query.q ? req.query.q.trim() : "";
+    const query = req.query.q
+      ? req.query.q.trim()
+      : "";
+
     const filter = query
       ? {
-        $or: [
-          { name: { $regex: query, $options: "i" } },
-          { address: { $regex: query, $options: "i" } },
-        ],
-      }
+          $or: [
+            {
+              name: {
+                $regex: query,
+                $options: "i",
+              },
+            },
+            {
+              address: {
+                $regex: query,
+                $options: "i",
+              },
+            },
+          ],
+        }
       : {};
 
     const hospitals = await Hospital.find(filter)
-      .select("_id name address phone location")
+      .select(
+        "_id name address phone location"
+      )
       .lean();
 
-    res.status(200).json({ hospitals });
+    res.status(200).json({
+      hospitals,
+    });
   } catch (error) {
-    console.error("Error fetching hospitals list:", error);
-    res.status(500).json({ error: "Failed to fetch hospitals." });
+    console.error(
+      "Error fetching hospitals list:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to fetch hospitals.",
+    });
   }
 };
-
-
-
-
-
-
-
-
-

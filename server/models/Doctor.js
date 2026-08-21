@@ -34,9 +34,14 @@ const doctorSchema = new mongoose.Schema(
       ref: "Hospital",
       required: true,
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
+    // isVerified: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
     education: {
       type: String,

@@ -1,35 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { User, Stethoscope, Calendar, CreditCard, Building, GraduationCap } from "lucide-react";
 import { doctorProfileApi, getDoctorProfileApi } from "../services/doctorServices";
-import { getAllHospitals } from "../services/hospitalsServices";
-import {toast} from "sonner";
+// import { getAllHospitals } from "../services/hospitalsServices";
+import { toast } from "sonner";
 const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
   const [formData, setFormData] = useState({
     gender: "",
     specialization: "",
     experience: "",
     licenseNumber: "",
-    hospitalId: "",
+    hospitalLicenseNumber: "",
     education: "",
   });
-  const [hospitals, setHospitals] = useState([]);
+  // const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [fetching, setFetching] = useState(true);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setMessage(""); 
+    setMessage("");
   };
 
-  const fetchHospitals = async () => {
-    try {
-      const response = await getAllHospitals();
-      setHospitals(response.hospitals || []);
-    } catch (error) {
-      console.error("Error fetching hospitals:", error);
-    }
-  };
+  // const fetchHospitals = async () => {
+  //   try {
+  //     const response = await getAllHospitals();
+  //     setHospitals(response.hospitals || []);
+  //   } catch (error) {
+  //     console.error("Error fetching hospitals:", error);
+  //   }
+  // };
 
   const fetchDoctorProfile = async () => {
     try {
@@ -41,7 +41,7 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
           specialization: response.doctor.specialization || "",
           experience: response.doctor.experience || "",
           licenseNumber: response.doctor.licenseNumber || "",
-          hospitalId: response.doctor.hospitalId?._id || "",
+          hospitalLicenseNumber: "",
           education: response.doctor.education || "",
         }));
       }
@@ -53,7 +53,7 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const response = await doctorProfileApi(formData);
       if (response) {
@@ -75,19 +75,28 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
 
   useEffect(() => {
     const load = async () => {
-      await Promise.all([fetchHospitals(), fetchDoctorProfile()]);
+      await fetchDoctorProfile();
       setFetching(false);
     };
+
     load();
   }, []);
 
   const fields = [
-    { name: "gender", label: "gender", type: "select", icon: User, required: true,
-      options: ["", "male", "female", "other"] },
+    {
+      name: "gender", label: "gender", type: "select", icon: User, required: true,
+      options: ["", "male", "female", "other"]
+    },
     { name: "specialization", label: "Specialization", type: "text", icon: Stethoscope, required: true },
     { name: "experience", label: "Experience (Years)", type: "number", icon: Calendar, min: 0, max: 60 },
     { name: "licenseNumber", label: "License Number", type: "text", icon: CreditCard, required: true },
-    { name: "hospitalId", label: "Hospital", type: "hospital-select", icon: Building, required: true },
+    {
+      name: "hospitalLicenseNumber",
+      label: "Hospital License Number",
+      type: "text",
+      icon: Building,
+      required: true
+    },
     { name: "education", label: "Education", type: "text", icon: GraduationCap },
   ];
 
@@ -117,26 +126,30 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
           <div className="p-8">
             {/* Message */}
             {message && (
-              <div className={`p-4 rounded-lg mb-6 ${
-                message.includes("success") 
-                  ? "bg-green-900 text-green-100 border border-green-700" 
-                  : "bg-red-900 text-red-100 border border-red-700"
-              }`}>
+              <div className={`p-4 rounded-lg mb-6 ${message.includes("success")
+                ? "bg-green-900 text-green-100 border border-green-700"
+                : "bg-red-900 text-red-100 border border-red-700"
+                }`}>
                 {message}
               </div>
             )}
 
             {/* Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {fields.map(field => {
+              {fields.map((field) => {
                 const Icon = field.icon;
+
                 return (
                   <div key={field.name}>
-                    <label className=" text-gray-200 font-medium mb-2 flex items-center gap-2">
+                    <label className="text-gray-200 font-medium mb-2 flex items-center gap-2">
                       <Icon className="w-5 h-5 text-gray-400" />
-                      {field.label} {field.required && <span className="text-red-400">*</span>}
+                      {field.label}
+
+                      {field.required && (
+                        <span className="text-red-400">*</span>
+                      )}
                     </label>
-                    
+
                     {field.type === "select" ? (
                       <select
                         name={field.name}
@@ -145,24 +158,12 @@ const UpdateDoctorProfile = ({ doctorDetails, onSuccess }) => {
                         required={field.required}
                         className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        {field.options.map(option => (
-                          <option key={option} value={option.toLowerCase()}>
+                        {field.options.map((option) => (
+                          <option
+                            key={option}
+                            value={option.toLowerCase()}
+                          >
                             {option || "Select " + field.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field.type === "hospital-select" ? (
-                      <select
-                        name={field.name}
-                        value={formData[field.name]}
-                        onChange={handleChange}
-                        required={field.required}
-                        className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select Hospital</option>
-                        {hospitals.map((hospital) => (
-                          <option key={hospital._id} value={hospital._id}>
-                            {hospital.name} - {hospital.address}
                           </option>
                         ))}
                       </select>

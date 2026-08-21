@@ -33,6 +33,7 @@ import { logoutUser } from '../services/logoutService';
 import { useNavigate } from 'react-router-dom';
 import { getHospital } from '../services/hospitalsServices';
 import HospitalProfile from "../component/HospitalProfile";
+import { getDoctorRequestsApi, updateDoctorRequestApi } from '../services/doctorServices';
 import { getPatientsByHospital } from '../services/hospitalsServices';
 import DrPatientsListByHospital from '../component/DrPatientsListByHospital';
 import { getAllHospitalPatients } from '../services/hospitalsServices';
@@ -50,15 +51,15 @@ const HospitalDashboard = () => {
   const [notifications] = useState(5);
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [hospitalProfile, setHospitalProfile] = useState(null);
+  const [doctorRequests, setDoctorRequests] = useState([]);
   const [hospitalProfileLoading, setHospitalProfileLoading] = useState(true);
   const [hospitalProfileError, setHospitalProfileError] = useState(null);
   const [doctorsPatientsData, setDoctorsPatientsData] = useState([]);
+  const [activeDoctorsCount, setActiveDoctorsCount] = useState(0);
   const [AllPatients, setAllPatients] = useState([]);
   const [allAssistants, setAllAssistants] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [patientsLength, setPatientsLength] = useState(0);
-
-
 
 
   useEffect(() => {
@@ -79,8 +80,6 @@ const HospitalDashboard = () => {
   }, []);
 
   const navigate = useNavigate();
-
-
 
   const getHospitalProfile = async () => {
     setHospitalProfileLoading(true);
@@ -105,14 +104,39 @@ const HospitalDashboard = () => {
     getHospitalProfile();
   }, []);
 
+  const fetchDoctorRequests = async () => {
+    try {
+      const response = await getDoctorRequestsApi();
+      setDoctorRequests(response.doctors || []);
+    } catch (error) {
+      console.log("Error fetching doctor requests:", error);
+    }
+  };
 
+  const handleDoctorRequest = async (doctorId, status) => {
+    try {
+      await updateDoctorRequestApi(doctorId, status);
+
+      toast.success(
+        status === "approved"
+          ? "Doctor approved successfully"
+          : "Doctor request rejected"
+      );
+
+      fetchDoctorRequests();
+      fetchDRPatientsStats();
+    } catch (error) {
+      console.log("Error updating doctor request:", error);
+      toast.error("Failed to update doctor request");
+    }
+  };
 
   const fetchDRPatientsStats = async () => {
     try {
       const response = await getPatientsByHospital();
       if (response) {
         setDoctorsPatientsData(response.doctors);
-        console.log("Patient Stats: ", response);
+        setActiveDoctorsCount(response.doctors.length);
       }
 
     } catch (error) {
@@ -121,24 +145,37 @@ const HospitalDashboard = () => {
   }
 
   useEffect(() => {
-    if (activeTab === 'doctors') {
+    if (activeTab === "home" || activeTab === "doctors") {
       fetchDRPatientsStats();
     }
-  }, [activeTab])
 
-
+    if (activeTab === "doctors") {
+      fetchDoctorRequests();
+    }
+  }, [activeTab]);
 
   const fetchAllHospitalPatients = async () => {
     try {
       const response = await getAllHospitalPatients();
       if (response) {
-        console.log("All Hospital Patients: ", response);
-        setAllPatients(response.appointments);
-        setPatientsLength(response.totalAppointments);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todaysPatients = (response.appointments || []).filter((patient) => {
+          if (!patient.appointmentDate) return false;
+
+          const appointmentDate = new Date(patient.appointmentDate);
+          appointmentDate.setHours(0, 0, 0, 0);
+
+          return appointmentDate.getTime() === today.getTime();
+        });
+
+        setAllPatients(todaysPatients);
+        setPatientsLength(todaysPatients.length);
       }
 
     } catch (error) {
-      console.log("Error in fetching all hospital patients", error)
+      console.log("Error in fetching today's patients", error);
     }
   };
 
@@ -181,9 +218,9 @@ const HospitalDashboard = () => {
   ];
 
   const hospitalStats = [
-    { icon: Users, label: 'Total Patients', value: patientsLength, change: '+12%', color: 'text-blue-400' },
-    { icon: UserCheck, label: 'Doctors on Duty', value: '2', change: '+2', color: 'text-purple-400' },
-    { icon: Activity, label: 'Emergency Cases', value: '0', change: '+3', color: 'text-red-400' },
+    { icon: Users, label: 'Total Patients', value: patientsLength, color: 'text-blue-400' },
+    { icon: UserCheck, label: 'Doctors on Duty', value: activeDoctorsCount, color: 'text-purple-400' },
+    { icon: Activity, label: 'Emergency Cases', value: '0', color: 'text-red-400' },
   ];
 
   const handleLogout = async () => {
@@ -234,9 +271,6 @@ const HospitalDashboard = () => {
                 <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                    <span className="text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full">
-                      {stat.change}
-                    </span>
                   </div>
                   <h3 className="text-lg font-semibold text-white">{stat.value}</h3>
                   <p className="text-gray-400 text-sm">{stat.label}</p>
@@ -355,22 +389,57 @@ const HospitalDashboard = () => {
               </div>
               <div className="space-y-4">
                 {filteredPatients.map((patient, index) => (
-                  <div key={index} className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300">
+                  <div
+                    key={patient._id || index}
+                    className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300"
+                  >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-white">{patient.name} ({patient.userId})</h4>
-                        <p className="text-gray-400 text-sm">Age: {patient.age}</p>
-                        <p className="text-gray-300 text-sm">Phone: {patient.phone}</p>
+
+                      {/* Left side */}
+                      <div className="flex items-center gap-4">
+
+                        {/* Patient index */}
+                        <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-blue-400 font-semibold">
+                            {index + 1}
+                          </span>
+                        </div>
+
+                        {/* Patient information */}
+                        <div>
+                          <h4 className="font-medium text-white">
+                            {patient.name}
+                          </h4>
+
+                          <p className="text-gray-400 text-sm">
+                            Age: {patient.age}
+                          </p>
+
+                          <p className="text-gray-300 text-sm">
+                            Phone: {patient.phone}
+                          </p>
+                        </div>
+
                       </div>
+
+                      {/* Right side */}
                       <div className="text-right">
-                        <p className="text-blue-400 font-medium">{patient.time}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${patient.status === 'Completed' ? 'bg-green-400/20 text-green-400' :
-                          patient.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :
-                            'bg-blue-400/20 text-blue-400'
-                          }`}>
+                        <p className="text-blue-400 font-medium">
+                          {patient.time}
+                        </p>
+
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${patient.status === "Completed"
+                              ? "bg-green-400/20 text-green-400"
+                              : patient.status === "In Progress"
+                                ? "bg-yellow-400/20 text-yellow-400"
+                                : "bg-blue-400/20 text-blue-400"
+                            }`}
+                        >
                           {patient.status}
                         </span>
                       </div>
+
                     </div>
                   </div>
                 ))}
@@ -380,13 +449,186 @@ const HospitalDashboard = () => {
         );
       }
 
-
-
-
-      case 'doctors':
+      case "doctors":
         return (
-          <div className="space-y-6">
-            <DrPatientsListByHospital data={doctorsPatientsData} />
+          <div className="space-y-8">
+
+            {/* ================= ACTIVE DOCTORS ================= */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white">
+                  Active Doctors
+                </h2>
+
+                <p className="text-gray-400 text-sm mt-1">
+                  Doctors who are currently approved by your hospital.
+                </p>
+              </div>
+
+              <DrPatientsListByHospital
+                data={doctorsPatientsData}
+              />
+            </div>
+
+
+            {/* ================= DOCTOR REQUESTS ================= */}
+            <div className="space-y-4">
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    Doctor Requests
+                  </h2>
+
+                  <p className="text-gray-400 text-sm mt-1">
+                    Doctors waiting for hospital approval.
+                  </p>
+                </div>
+
+                {doctorRequests.length > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-sm">
+                    {doctorRequests.length} Pending
+                  </span>
+                )}
+              </div>
+
+
+              {/* No pending requests */}
+              {doctorRequests.length === 0 ? (
+                <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-8 text-center">
+                  <UserCheck className="w-10 h-10 text-gray-500 mx-auto mb-3" />
+
+                  <h3 className="text-lg font-semibold text-white">
+                    No Doctor Requests
+                  </h3>
+
+                  <p className="text-gray-400 text-sm mt-1">
+                    There are currently no doctors waiting for approval.
+                  </p>
+                </div>
+              ) : (
+
+                /* Pending requests */
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                  {doctorRequests.map((doctor) => (
+
+                    <div
+                      key={doctor._id}
+                      className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-5 hover:border-blue-500/40 transition"
+                    >
+
+                      {/* Doctor information */}
+                      <div className="flex items-start justify-between">
+
+                        <div className="flex items-center gap-3">
+
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                            <Stethoscope className="w-6 h-6 text-white" />
+                          </div>
+
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              {doctor.userId?.name || "Unknown Doctor"}
+                            </h3>
+
+                            <p className="text-blue-400 text-sm">
+                              {doctor.specialization}
+                            </p>
+                          </div>
+
+                        </div>
+
+                        <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">
+                          Pending
+                        </span>
+
+                      </div>
+
+
+                      {/* Doctor details */}
+                      <div className="mt-5 space-y-2">
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <IdCard className="w-4 h-4 text-gray-400" />
+
+                          <span className="text-gray-400">
+                            License:
+                          </span>
+
+                          <span className="text-white">
+                            {doctor.licenseNumber}
+                          </span>
+                        </div>
+
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4 text-gray-400" />
+
+                          <span className="text-gray-400">
+                            Email:
+                          </span>
+
+                          <span className="text-white">
+                            {doctor.userId?.email || "N/A"}
+                          </span>
+                        </div>
+
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <Activity className="w-4 h-4 text-gray-400" />
+
+                          <span className="text-gray-400">
+                            Experience:
+                          </span>
+
+                          <span className="text-white">
+                            {doctor.experience || 0} years
+                          </span>
+                        </div>
+
+                      </div>
+
+
+                      {/* Action buttons */}
+                      <div className="flex gap-3 mt-6">
+
+                        <button
+                          onClick={() =>
+                            handleDoctorRequest(
+                              doctor._id,
+                              "approved"
+                            )
+                          }
+                          className="flex-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 py-2.5 rounded-lg font-medium transition"
+                        >
+                          Accept
+                        </button>
+
+
+                        <button
+                          onClick={() =>
+                            handleDoctorRequest(
+                              doctor._id,
+                              "rejected"
+                            )
+                          }
+                          className="flex-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 py-2.5 rounded-lg font-medium transition"
+                        >
+                          Reject
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  ))}
+
+                </div>
+              )}
+
+            </div>
+
           </div>
         );
       case 'assistants':
@@ -477,39 +719,59 @@ const HospitalDashboard = () => {
       {/* Main Content */}
       <div className={`${toggleSideBar ? "ml-64" : "ml-20"} transition-all duration-300 ease-in-out flex flex-col min-h-screen`}>
         {/* Header */}
-        <header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white capitalize">
-                {activeTab === 'home' ? 'Hospital Dashboard' : activeTab.replace(/([A-Z])/g, ' $1').trim()}
-              </h2>
-              <p className="text-gray-400 text-sm">
-                {new Date().toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                <Bell className="w-5 h-5" />
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {notifications}
+        {/* Header - Only visible on Home tab */}
+        {activeTab === "home" && (
+          <header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+
+              {/* Left side */}
+              <div>
+                <h2 className="text-xl font-semibold text-white capitalize">
+                  Hospital Dashboard
+                </h2>
+
+                <p className="text-gray-400 text-sm">
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+
+              {/* Right side */}
+              <div className="flex items-center space-x-4">
+
+                {/* Notifications */}
+                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                  <Bell className="w-5 h-5" />
+
+                  {notifications > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {notifications}
+                    </span>
+                  )}
+                </button>
+
+                {/* Hospital Admin */}
+                <div
+                  onClick={() => navigate("/hospitalAdmin/dashboard/profile")}
+                  className="flex items-center space-x-2 cursor-pointer group"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+
+                  <span className="text-white font-medium">
+                    {hospitalProfile?.userId?.name || "Hospital Admin"}
                   </span>
-                )}
-              </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white font-medium">{hospitalProfile?.userId?.name || 'Hospital Admin'}</span>
+
               </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         {/* Content */}
         <main className="flex-1 p-6 overflow-y-auto">

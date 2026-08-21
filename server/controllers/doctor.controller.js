@@ -15,7 +15,7 @@ export const doctorProfile = async (req, res) => {
       specialization,
       experience,
       licenseNumber,
-      hospitalId,
+      hospitalLicenseNumber,
       education,
     } = req.body;
 
@@ -23,65 +23,98 @@ export const doctorProfile = async (req, res) => {
 
     let doctor = await Doctor.findOne({ userId });
 
+    // ==========================================
+    // CREATE NEW DOCTOR / SEND HOSPITAL REQUEST
+    // ==========================================
     if (!doctor) {
-      if (!gender || !specialization || !licenseNumber || !hospitalId) {
-        return res.status(400).json({ error: "All required fields must be filled." });
+      if (
+        !gender ||
+        !specialization ||
+        !licenseNumber ||
+        !hospitalLicenseNumber
+      ) {
+        return res.status(400).json({
+          error: "All required fields must be filled.",
+        });
       }
 
-      if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
-        return res.status(400).json({ error: "Invalid hospitalId format." });
-      }
+      // Find hospital using hospital license number
+      const hospitalExists = await Hospital.findOne({
+        licenseNumber: hospitalLicenseNumber.trim(),
+      });
 
-      const hospitalExists = await Hospital.findById(hospitalId);
       if (!hospitalExists) {
-        return res.status(404).json({ error: "Selected hospital not found." });
+        return res.status(404).json({
+          error: "Hospital with this license number not found.",
+        });
       }
 
+      // Create doctor as unverified/pending
       const newDoctor = await Doctor.create({
         userId,
         gender,
         specialization,
         experience,
         licenseNumber,
-        hospitalId,
+        hospitalId: hospitalExists._id,
+        isVerified: false,
         education,
       });
 
       return res.status(201).json({
-        message: "Doctor profile created successfully.",
+        message:
+          "Doctor registration request sent successfully. Please wait for hospital admin approval.",
         doctor: newDoctor,
-      });
-    } else {
-      // Update fields if provided
-      doctor.gender = gender || doctor.gender;
-      doctor.specialization = specialization || doctor.specialization;
-      doctor.experience = experience !== undefined ? experience : doctor.experience;
-      doctor.licenseNumber = licenseNumber || doctor.licenseNumber;
-      if (hospitalId) {
-        if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
-          return res.status(400).json({ error: "Invalid hospitalId format." });
-        }
-
-        const hospitalExists = await Hospital.findById(hospitalId);
-        if (!hospitalExists) {
-          return res.status(404).json({ error: "Selected hospital not found." });
-        }
-
-        doctor.hospitalId = hospitalId;
-      }
-      doctor.education = education || doctor.education;
-
-      await doctor.save();
-
-      return res.status(200).json({
-        message: "Doctor profile updated successfully.",
-        doctor,
       });
     }
 
+    // ==========================================
+    // UPDATE EXISTING DOCTOR PROFILE
+    // ==========================================
+
+    doctor.gender = gender || doctor.gender;
+
+    doctor.specialization =
+      specialization || doctor.specialization;
+
+    doctor.experience =
+      experience !== undefined
+        ? experience
+        : doctor.experience;
+
+    doctor.licenseNumber =
+      licenseNumber || doctor.licenseNumber;
+
+    doctor.education =
+      education || doctor.education;
+
+    // IMPORTANT:
+    // Do not allow an existing doctor to change
+    // hospital from the profile update page.
+
+    await doctor.save();
+
+    return res.status(200).json({
+      message: "Doctor profile updated successfully.",
+      doctor,
+    });
+
   } catch (error) {
     console.error("Error in doctor profile handler:", error);
-    return res.status(500).json({ error: "Server error while handling doctor profile." });
+
+    // Handle duplicate license numbers
+    if (error.code === 11000) {
+      const duplicateField =
+        Object.keys(error.keyPattern || {})[0] || "Field";
+
+      return res.status(400).json({
+        error: `${duplicateField} already exists.`,
+      });
+    }
+
+    return res.status(500).json({
+      error: "Server error while handling doctor profile.",
+    });
   }
 };
 
@@ -246,7 +279,10 @@ export const getDoctorsByHospital = async (req, res) => {
       return res.status(400).json({ error: "Hospital ID is required." });
     }
 
-    const doctors = await Doctor.find({ hospitalId })
+    const doctors = await Doctor.find({
+      hospitalId,
+      status: "approved",
+    })
       .populate({
         path: "userId",
         select: "name email",
@@ -466,6 +502,94 @@ export const allTodaysOnlineAppointment = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Server error while fetching today's online appointments.",
+    });
+  }
+};
+
+export const getDoctorRequests = async (req, res) => {
+  try {
+    const hospital = await Hospital.findOne({
+      userId: req.user.id,
+    });
+
+    if (!hospital) {
+      return res.status(404).json({
+        error: "Hospital not found.",
+      });
+    }
+
+    const doctors = await Doctor.find({
+      hospitalId: hospital._id,
+      status: "pending",
+    })
+      .populate("userId", "name email phone")
+      .select(
+        "userId gender specialization experience licenseNumber education status createdAt"
+      )
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      total: doctors.length,
+      doctors,
+    });
+  } catch (error) {
+    console.error("Error fetching doctor requests:", error);
+
+    res.status(500).json({
+      error: "Failed to fetch doctor requests.",
+    });
+  }
+};
+
+export const updateDoctorRequest = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const { status } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        error: "Invalid status.",
+      });
+    }
+
+    const hospital = await Hospital.findOne({
+      userId: req.user.id,
+    });
+
+    if (!hospital) {
+      return res.status(404).json({
+        error: "Hospital not found.",
+      });
+    }
+
+    const doctor = await Doctor.findOne({
+      _id: doctorId,
+      hospitalId: hospital._id,
+      status: "pending",
+    });
+
+    if (!doctor) {
+      return res.status(404).json({
+        error: "Doctor request not found.",
+      });
+    }
+
+    doctor.status = status;
+
+    await doctor.save();
+
+    res.status(200).json({
+      message:
+        status === "approved"
+          ? "Doctor approved successfully."
+          : "Doctor request rejected successfully.",
+      doctor,
+    });
+  } catch (error) {
+    console.error("Error updating doctor request:", error);
+
+    res.status(500).json({
+      error: "Failed to update doctor request.",
     });
   }
 };
