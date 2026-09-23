@@ -128,10 +128,6 @@ export const getMyHospitalProfile = async (req, res) => {
 };
 
 
-// ============================================================
-// GET ACTIVE DOCTORS + PATIENT STATS
-// ============================================================
-
 export const getPatientStats = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -244,10 +240,6 @@ export const getPatientStats = async (req, res) => {
 };
 
 
-// ============================================================
-// GET ALL HOSPITAL PATIENTS
-// ============================================================
-
 export const getAllHospitalPatients = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -285,55 +277,49 @@ export const getAllHospitalPatients = async (req, res) => {
         select: "specialization userId status isVerified",
       });
 
-    /*
-      Remove appointments whose doctor is not active.
-
-      populate().match() makes doctorId null when the doctor
-      is pending/rejected/unverified.
-    */
     const activeAppointments = appointments.filter(
       (appointment) => appointment.doctorId
     );
 
     const patientAppointments = activeAppointments.map(
-  (appointment) => {
-    const patient = appointment.patientId;
-    const user = patient?.userId;
+      (appointment) => {
+        const patient = appointment.patientId;
+        const user = patient?.userId;
 
-    return {
-      appointmentId: appointment._id,
+        return {
+          appointmentId: appointment._id,
 
-      patientId: patient?._id,
+          patientId: patient?._id,
 
-      userId: user?._id,
+          userId: user?._id,
 
-      name: user?.name,
+          name: user?.name,
 
-      // Phone number provided when THIS appointment was created
-      phone: appointment.contact,
+          // Phone number provided when THIS appointment was created
+          phone: appointment.contact,
 
-      age: appointment?.age,
+          age: appointment?.age,
 
-      gender: appointment?.gender,
+          gender: appointment?.gender,
 
-      address: undefined,
+          address: undefined,
 
-      doctorName:
-        appointment.doctorId?.userId?.name,
+          doctorName:
+            appointment.doctorId?.userId?.name,
 
-      specialization:
-        appointment.doctorId?.specialization,
+          specialization:
+            appointment.doctorId?.specialization,
 
-      appointmentDate: appointment.date,
+          appointmentDate: appointment.date,
 
-      time: appointment.timeSlot,
+          time: appointment.timeSlot,
 
-      status: appointment.status,
+          status: appointment.status,
 
-      mode: appointment.mode,
-    };
-  }
-);
+          mode: appointment.mode,
+        };
+      }
+    );
 
     res.status(200).json({
       totalAppointments:
@@ -353,15 +339,7 @@ export const getAllHospitalPatients = async (req, res) => {
   }
 };
 
-
-// ============================================================
-// GET ALL ASSISTANTS FOR HOSPITAL
-// ============================================================
-
-export const getAllAssistantsForHospital = async (
-  req,
-  res
-) => {
+export const getAllAssistantsForHospital = async (req, res) => {
   const userId = req.user?.id;
 
   if (!userId) {
@@ -425,10 +403,6 @@ export const getAllAssistantsForHospital = async (
 };
 
 
-// ============================================================
-// GET ALL HOSPITALS
-// ============================================================
-
 export const getAllHospitals = async (req, res) => {
   try {
     const query = req.query.q
@@ -437,21 +411,21 @@ export const getAllHospitals = async (req, res) => {
 
     const filter = query
       ? {
-          $or: [
-            {
-              name: {
-                $regex: query,
-                $options: "i",
-              },
+        $or: [
+          {
+            name: {
+              $regex: query,
+              $options: "i",
             },
-            {
-              address: {
-                $regex: query,
-                $options: "i",
-              },
+          },
+          {
+            address: {
+              $regex: query,
+              $options: "i",
             },
-          ],
-        }
+          },
+        ],
+      }
       : {};
 
     const hospitals = await Hospital.find(filter)
@@ -474,11 +448,6 @@ export const getAllHospitals = async (req, res) => {
     });
   }
 };
-
-
-// ============================================================
-// HOSPITAL ADMIN: ADD WALK-IN PATIENT TO A DOCTOR
-// ============================================================
 
 export const addPatientToDoctor = async (req, res) => {
   try {
@@ -598,4 +567,4 @@ export const addPatientToDoctor = async (req, res) => {
       error: "Failed to add patient.",
     });
   }
-};
+};

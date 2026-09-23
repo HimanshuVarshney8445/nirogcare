@@ -81,7 +81,6 @@ const SelectRole = () => {
       if (selectedRole === 'patient') {
         try {
           tokenToSend = await requestFCMToken();
-          console.log("FCM token:", tokenToSend);
         } catch (error) {
           console.error("FCM Token Error:", error);
         }
@@ -97,7 +96,6 @@ const SelectRole = () => {
         if (selectedRole === 'patient') {
           try {
             await updatePatient();
-            console.log("Patient profile initialized !!");
           } catch (err) {
             console.warn("Patient profile update error:", err);
           }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   Home,
   Users,
@@ -17,19 +17,22 @@ import {
   PanelLeft,
   Mail,
   IdCard,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { logoutUser } from '../services/logoutService';
-import { useNavigate } from 'react-router-dom';
-import { getHospital } from '../services/hospitalsServices';
+} from "lucide-react";
+import { toast } from "sonner";
+import { logoutUser } from "../services/logoutService";
+import { useNavigate } from "react-router-dom";
+import { getHospital } from "../services/hospitalsServices";
 import HospitalProfile from "../component/HospitalProfile";
-import { getDoctorRequestsApi, updateDoctorRequestApi } from '../services/doctorServices';
-import { getPatientsByHospital } from '../services/hospitalsServices';
-import DrPatientsListByHospital from '../component/DrPatientsListByHospital';
-import { getAllHospitalPatients } from '../services/hospitalsServices';
-import { getAllAssistantsForHospital } from '../services/hospitalsServices';
-import AllAssistants from '../component/AllAssistants';
-import AddPatientModal from '../component/AddPatientModal';
+import {
+  getDoctorRequestsApi,
+  updateDoctorRequestApi,
+} from "../services/doctorServices";
+import { getPatientsByHospital } from "../services/hospitalsServices";
+import DrPatientsListByHospital from "../component/DrPatientsListByHospital";
+import { getAllHospitalPatients } from "../services/hospitalsServices";
+import { getAllAssistantsForHospital } from "../services/hospitalsServices";
+import AllAssistants from "../component/AllAssistants";
+import AddPatientModal from "../component/AddPatientModal";
 
 const HospitalDashboard = () => {
   const { tab } = useParams();
@@ -52,7 +55,6 @@ const HospitalDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [patientsLength, setPatientsLength] = useState(0);
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
-
 
   useEffect(() => {
     const handleResize = () => {
@@ -80,10 +82,11 @@ const HospitalDashboard = () => {
       setHospitalProfile(response.hospital || null);
       setHospitalProfileError(null);
     } catch (error) {
-      console.log("Error in fetching profile", error);
       if (error?.status === 404) {
         setHospitalProfile(null);
-        setHospitalProfileError("No hospital profile found. Please register your hospital.");
+        setHospitalProfileError(
+          "No hospital profile found. Please register your hospital.",
+        );
       } else {
         setHospitalProfileError("Unable to load hospital profile.");
       }
@@ -112,13 +115,12 @@ const HospitalDashboard = () => {
       toast.success(
         status === "approved"
           ? "Doctor approved successfully"
-          : "Doctor request rejected"
+          : "Doctor request rejected",
       );
 
       fetchDoctorRequests();
       fetchDRPatientsStats();
     } catch (error) {
-      console.log("Error updating doctor request:", error);
       toast.error("Failed to update doctor request");
     }
   };
@@ -130,11 +132,10 @@ const HospitalDashboard = () => {
         setDoctorsPatientsData(response.doctors);
         setActiveDoctorsCount(response.doctors.length);
       }
-
     } catch (error) {
-      console.log("Error in fetching patient stats", error)
+      console.log("Error in fetching patient stats", error);
     }
-  }
+  };
 
   useEffect(() => {
     if (activeTab === "home" || activeTab === "doctors") {
@@ -153,72 +154,79 @@ const HospitalDashboard = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const todaysPatients = (response.appointments || []).filter((patient) => {
-          if (!patient.appointmentDate) return false;
+        const todaysPatients = (response.appointments || []).filter(
+          (patient) => {
+            if (!patient.appointmentDate) return false;
 
-          const appointmentDate = new Date(patient.appointmentDate);
-          appointmentDate.setHours(0, 0, 0, 0);
+            const appointmentDate = new Date(patient.appointmentDate);
+            appointmentDate.setHours(0, 0, 0, 0);
 
-          return appointmentDate.getTime() === today.getTime();
-        });
+            return appointmentDate.getTime() === today.getTime();
+          },
+        );
 
         setAllPatients(todaysPatients);
         setPatientsLength(todaysPatients.length);
       }
-
     } catch (error) {
       console.log("Error in fetching today's patients", error);
     }
   };
 
   useEffect(() => {
-
     fetchAllHospitalPatients();
-
-  }, [])
-
+  }, []);
 
   const fetchAllAssistants = async () => {
     try {
       const response = await getAllAssistantsForHospital();
       if (response) {
-        console.log(response)
+        console.log(response);
         setAllAssistants(response?.assistants);
       }
-
     } catch (error) {
-      console.log("Error in fetching all assistants", error)
-
+      console.log("Error in fetching all assistants", error);
     }
-  }
-
+  };
 
   useEffect(() => {
-    if (activeTab === 'assistants') {
+    if (activeTab === "assistants") {
       fetchAllAssistants();
     }
-  }, [activeTab])
-
-
+  }, [activeTab]);
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'profile', label: 'My Profile', icon: User },
-    { id: 'patients', label: 'Todays Patients', icon: Users },
-    { id: 'doctors', label: 'Doctor Collection', icon: UserCheck },
-    { id: 'assistants', label: 'Assistant Collection', icon: UserPlus },
+    { id: "home", label: "Home", icon: Home },
+    { id: "profile", label: "My Profile", icon: User },
+    { id: "patients", label: "Todays Patients", icon: Users },
+    { id: "doctors", label: "Doctor Collection", icon: UserCheck },
+    { id: "assistants", label: "Assistant Collection", icon: UserPlus },
   ];
 
   const hospitalStats = [
-    { icon: Users, label: 'Total Patients', value: patientsLength, color: 'text-blue-400' },
-    { icon: UserCheck, label: 'Doctors on Duty', value: activeDoctorsCount, color: 'text-purple-400' },
-    { icon: Activity, label: 'Emergency Cases', value: '0', color: 'text-red-400' },
+    {
+      icon: Users,
+      label: "Total Patients",
+      value: patientsLength,
+      color: "text-blue-400",
+    },
+    {
+      icon: UserCheck,
+      label: "Doctors on Duty",
+      value: activeDoctorsCount,
+      color: "text-purple-400",
+    },
+    {
+      icon: Activity,
+      label: "Emergency Cases",
+      value: "0",
+      color: "text-red-400",
+    },
   ];
 
   const handleLogout = async () => {
     const response = await logoutUser();
     if (response?.status === 200) {
-      console.log("Logout successfully !!");
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
@@ -231,24 +239,33 @@ const HospitalDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home':
+      case "home":
         return (
           <div className="space-y-6">
             {/* Hospital Overview */}
             <div className="bg-gradient-to-r from-emerald-500/20 to-blue-500/20 p-6 rounded-xl border border-blue-500/30">
-              <h2 className="text-2xl font-bold text-white mb-2">Hospital Overview</h2>
-              <p className="text-gray-300">Real-time hospital operations dashboard</p>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Hospital Overview
+              </h2>
+              <p className="text-gray-300">
+                Real-time hospital operations dashboard
+              </p>
             </div>
 
             {!hospitalProfile && !hospitalProfileLoading && (
               <div className="bg-gray-900/80 border border-green-500/20 rounded-2xl p-6">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Hospital not registered yet</h3>
-                    <p className="text-gray-400 mt-2">Click below to register your hospital and complete your profile.</p>
+                    <h3 className="text-xl font-semibold text-white">
+                      Hospital not registered yet
+                    </h3>
+                    <p className="text-gray-400 mt-2">
+                      Click below to register your hospital and complete your
+                      profile.
+                    </p>
                   </div>
                   <button
-                    onClick={() => navigate('/hospitalAdmin/profile')}
+                    onClick={() => navigate("/hospitalAdmin/profile")}
                     className="rounded-xl bg-gradient-to-r from-green-500 to-cyan-400 px-6 py-3 font-semibold text-black hover:opacity-90 transition"
                   >
                     Register Hospital
@@ -260,11 +277,16 @@ const HospitalDashboard = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {hospitalStats.map((stat, index) => (
-                <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+                <div
+                  key={index}
+                  className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{stat.value}</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                    {stat.value}
+                  </h3>
                   <p className="text-gray-400 text-sm">{stat.label}</p>
                 </div>
               ))}
@@ -273,21 +295,37 @@ const HospitalDashboard = () => {
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
-                <h3 className="text-xl font-semibold text-white mb-4">Recent Admissions</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">
+                  Recent Admissions
+                </h3>
                 <div className="space-y-3">
                   {AllPatients.slice(0, 3).map((patient, index) => (
-                    <div key={index} className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30">
+                    <div
+                      key={index}
+                      className="bg-gray-700/30 p-3 rounded-lg border border-gray-600/30"
+                    >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-white">{patient.name}</h4>
-                          <p className="text-gray-400 text-sm">{patient.condition}</p>
+                          <h4 className="font-medium text-white">
+                            {patient.name}
+                          </h4>
+                          <p className="text-gray-400 text-sm">
+                            {patient.condition}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-blue-400 text-sm">{patient.time}</p>
-                          <span className={`text-xs px-2 py-1 rounded-full ${patient.status === 'Completed' ? 'bg-green-400/20 text-green-400' :
-                            patient.status === 'In Progress' ? 'bg-yellow-400/20 text-yellow-400' :
-                              'bg-blue-400/20 text-blue-400'
-                            }`}>
+                          <p className="text-blue-400 text-sm">
+                            {patient.time}
+                          </p>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              patient.status === "Completed"
+                                ? "bg-green-400/20 text-green-400"
+                                : patient.status === "In Progress"
+                                  ? "bg-yellow-400/20 text-yellow-400"
+                                  : "bg-blue-400/20 text-blue-400"
+                            }`}
+                          >
                             {patient.status}
                           </span>
                         </div>
@@ -298,24 +336,32 @@ const HospitalDashboard = () => {
               </div>
 
               <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
-                <h3 className="text-xl font-semibold text-white mb-4">Emergency Alerts</h3>
+                <h3 className="text-xl font-semibold text-white mb-4">
+                  Emergency Alerts
+                </h3>
                 <div className="space-y-3">
                   <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30">
                     <div className="flex items-center space-x-2">
                       <AlertTriangle className="w-5 h-5 text-red-400" />
-                      <span className="text-red-400 font-medium">Critical Patient - Room 205</span>
+                      <span className="text-red-400 font-medium">
+                        Critical Patient - Room 205
+                      </span>
                     </div>
                   </div>
                   <div className="bg-yellow-500/20 p-3 rounded-lg border border-yellow-500/30">
                     <div className="flex items-center space-x-2">
                       <Clock className="w-5 h-5 text-yellow-400" />
-                      <span className="text-yellow-400 font-medium">Lab Results Pending - 3 Hours</span>
+                      <span className="text-yellow-400 font-medium">
+                        Lab Results Pending - 3 Hours
+                      </span>
                     </div>
                   </div>
                   <div className="bg-blue-500/20 p-3 rounded-lg border border-blue-500/30">
                     <div className="flex items-center space-x-2">
                       <Building className="w-5 h-5 text-blue-400" />
-                      <span className="text-blue-400 font-medium">Maintenance - OR 3 Tomorrow</span>
+                      <span className="text-blue-400 font-medium">
+                        Maintenance - OR 3 Tomorrow
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -323,33 +369,24 @@ const HospitalDashboard = () => {
             </div>
           </div>
         );
-      case 'profile':
-
+      case "profile":
         if (hospitalProfileLoading) {
           return (
             <div className="flex items-center justify-center min-h-[60vh]">
-              <p className="text-gray-400">
-                Loading hospital profile...
-              </p>
+              <p className="text-gray-400">Loading hospital profile...</p>
             </div>
           );
         }
 
         if (!hospitalProfile) {
           return (
-            <div className="text-white">
-              Hospital profile not available.
-            </div>
+            <div className="text-white">Hospital profile not available.</div>
           );
         }
 
-        return (
-          <HospitalProfile
-            hospitalProfile={hospitalProfile}
-          />
-        );
+        return <HospitalProfile hospitalProfile={hospitalProfile} />;
 
-      case 'patients': {
+      case "patients": {
         const filteredPatients = AllPatients.filter((patient) => {
           const name = patient.name?.toLowerCase() || "";
           const phone = patient.phone || "";
@@ -361,7 +398,9 @@ const HospitalDashboard = () => {
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Today's Patients</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Today's Patients
+                </h2>
                 <div className="flex items-center space-x-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -389,10 +428,8 @@ const HospitalDashboard = () => {
                     className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300"
                   >
                     <div className="flex items-center justify-between">
-
                       {/* Left side */}
                       <div className="flex items-center gap-4">
-
                         {/* Patient index */}
                         <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
                           <span className="text-blue-400 font-semibold">
@@ -414,7 +451,6 @@ const HospitalDashboard = () => {
                             Phone: {patient.phone}
                           </p>
                         </div>
-
                       </div>
 
                       {/* Right side */}
@@ -424,17 +460,17 @@ const HospitalDashboard = () => {
                         </p>
 
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${patient.status === "Completed"
-                            ? "bg-green-400/20 text-green-400"
-                            : patient.status === "In Progress"
-                              ? "bg-yellow-400/20 text-yellow-400"
-                              : "bg-blue-400/20 text-blue-400"
-                            }`}
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            patient.status === "Completed"
+                              ? "bg-green-400/20 text-green-400"
+                              : patient.status === "In Progress"
+                                ? "bg-yellow-400/20 text-yellow-400"
+                                : "bg-blue-400/20 text-blue-400"
+                          }`}
                         >
                           {patient.status}
                         </span>
                       </div>
-
                     </div>
                   </div>
                 ))}
@@ -447,7 +483,6 @@ const HospitalDashboard = () => {
       case "doctors":
         return (
           <div className="space-y-8">
-
             {/* ================= ACTIVE DOCTORS ================= */}
             <div className="space-y-4">
               <div>
@@ -460,15 +495,11 @@ const HospitalDashboard = () => {
                 </p>
               </div>
 
-              <DrPatientsListByHospital
-                data={doctorsPatientsData}
-              />
+              <DrPatientsListByHospital data={doctorsPatientsData} />
             </div>
-
 
             {/* ================= DOCTOR REQUESTS ================= */}
             <div className="space-y-4">
-
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">
@@ -487,7 +518,6 @@ const HospitalDashboard = () => {
                 )}
               </div>
 
-
               {/* No pending requests */}
               {doctorRequests.length === 0 ? (
                 <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-8 text-center">
@@ -502,22 +532,16 @@ const HospitalDashboard = () => {
                   </p>
                 </div>
               ) : (
-
                 /* Pending requests */
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
                   {doctorRequests.map((doctor) => (
-
                     <div
                       key={doctor._id}
                       className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-5 hover:border-blue-500/40 transition"
                     >
-
                       {/* Doctor information */}
                       <div className="flex items-start justify-between">
-
                         <div className="flex items-center gap-3">
-
                           <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                             <Stethoscope className="w-6 h-6 text-white" />
                           </div>
@@ -531,102 +555,74 @@ const HospitalDashboard = () => {
                               {doctor.specialization}
                             </p>
                           </div>
-
                         </div>
 
                         <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs">
                           Pending
                         </span>
-
                       </div>
-
 
                       {/* Doctor details */}
                       <div className="mt-5 space-y-2">
-
                         <div className="flex items-center gap-2 text-sm">
                           <IdCard className="w-4 h-4 text-gray-400" />
 
-                          <span className="text-gray-400">
-                            License:
-                          </span>
+                          <span className="text-gray-400">License:</span>
 
                           <span className="text-white">
                             {doctor.licenseNumber}
                           </span>
                         </div>
 
-
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="w-4 h-4 text-gray-400" />
 
-                          <span className="text-gray-400">
-                            Email:
-                          </span>
+                          <span className="text-gray-400">Email:</span>
 
                           <span className="text-white">
                             {doctor.userId?.email || "N/A"}
                           </span>
                         </div>
 
-
                         <div className="flex items-center gap-2 text-sm">
                           <Activity className="w-4 h-4 text-gray-400" />
 
-                          <span className="text-gray-400">
-                            Experience:
-                          </span>
+                          <span className="text-gray-400">Experience:</span>
 
                           <span className="text-white">
                             {doctor.experience || 0} years
                           </span>
                         </div>
-
                       </div>
-
 
                       {/* Action buttons */}
                       <div className="flex gap-3 mt-6">
-
                         <button
                           onClick={() =>
-                            handleDoctorRequest(
-                              doctor._id,
-                              "approved"
-                            )
+                            handleDoctorRequest(doctor._id, "approved")
                           }
                           className="flex-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 py-2.5 rounded-lg font-medium transition"
                         >
                           Accept
                         </button>
 
-
                         <button
                           onClick={() =>
-                            handleDoctorRequest(
-                              doctor._id,
-                              "rejected"
-                            )
+                            handleDoctorRequest(doctor._id, "rejected")
                           }
                           className="flex-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 py-2.5 rounded-lg font-medium transition"
                         >
                           Reject
                         </button>
-
                       </div>
-
                     </div>
-
                   ))}
-
                 </div>
               )}
-
             </div>
-
           </div>
         );
-      case 'assistants':
+      case "assistants":
         return (
           <div className="space-y-6">
             <AllAssistants data={allAssistants} />
@@ -652,7 +648,6 @@ const HospitalDashboard = () => {
                 </div>
               )}
 
-
               {toggleSideBar && (
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-blue-300 transition-all duration-300">
                   NirogCare
@@ -661,8 +656,9 @@ const HospitalDashboard = () => {
             </div>
             <PanelLeft
               onClick={() => setToggleSideBar((prev) => !prev)}
-              className={`${toggleSideBar ? "" : "mt-[10px] mb-[13px] mr-[10px]"
-                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+              className={`${
+                toggleSideBar ? "" : "mt-[10px] mb-[13px] mr-[10px]"
+              } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
             />
           </div>
         </div>
@@ -674,11 +670,13 @@ const HospitalDashboard = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
-                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                  className={`w-full flex items-center ${
+                    toggleSideBar ? "space-x-3" : "justify-center"
+                  } cursor-pointer p-3 rounded-lg relative ${
+                    activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
                       : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                    }`}
+                  }`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   {toggleSideBar && (
@@ -686,10 +684,11 @@ const HospitalDashboard = () => {
                   )}
                   {activeTab === item.id && (
                     <span
-                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                 </button>
@@ -702,8 +701,9 @@ const HospitalDashboard = () => {
         <div className="p-4 border-t border-gray-700/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${toggleSideBar ? "space-x-3 justify-start" : "justify-center"
-              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+            className={`w-full flex items-center ${
+              toggleSideBar ? "space-x-3 justify-start" : "justify-center"
+            } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
             {toggleSideBar && <span>Logout</span>}
@@ -712,13 +712,14 @@ const HospitalDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className={`${toggleSideBar ? "ml-64" : "ml-20"} transition-all duration-300 ease-in-out flex flex-col min-h-screen`}>
+      <div
+        className={`${toggleSideBar ? "ml-64" : "ml-20"} transition-all duration-300 ease-in-out flex flex-col min-h-screen`}
+      >
         {/* Header */}
         {/* Header - Only visible on Home tab */}
         {activeTab === "home" && (
           <header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-
               {/* Left side */}
               <div>
                 <h2 className="text-xl font-semibold text-white capitalize">
@@ -737,7 +738,6 @@ const HospitalDashboard = () => {
 
               {/* Right side */}
               <div className="flex items-center space-x-4">
-
                 {/* Notifications */}
                 {/* <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
                   <Bell className="w-5 h-5" />
@@ -751,10 +751,10 @@ const HospitalDashboard = () => {
 
                 {/* Hospital Admin */}
                 <div
-                  onClick={() => navigate("/hospitalAdmin/dashboard/profile")}
+                  onClick={() => handleTabChange("profile")}
                   className="flex items-center space-x-2 cursor-pointer group"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
                     <User className="w-4 h-4 text-white" />
                   </div>
 
@@ -762,16 +762,13 @@ const HospitalDashboard = () => {
                     {hospitalProfile?.userId?.name || "Hospital Admin"}
                   </span>
                 </div>
-
               </div>
             </div>
           </header>
         )}
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          {renderContent()}
-        </main>
+        <main className="flex-1 p-6 overflow-y-auto">{renderContent()}</main>
 
         {/* Add Patient Modal */}
         <AddPatientModal

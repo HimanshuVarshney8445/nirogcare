@@ -11,8 +11,6 @@ import {
   ArrowLeft,
   Stethoscope,
   ShieldCheck,
-  HeartPulse,
-  CalendarCheck,
 } from 'lucide-react';
 import { callAuthLoginApi, callAuthRegisterApi } from '../api/authServices';
 import { toast } from 'sonner';

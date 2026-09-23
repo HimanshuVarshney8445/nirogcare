@@ -486,16 +486,9 @@ if (!hospitals || hospitals.length === 0) {
                     <option value="offline">Offline</option>
                   </select>
                 </div>
-          
-
                 
               </div>
 
-
-
-                
-                
-              
               <div className="flex gap-4 mt-6">
                 <button 
                   onClick={handleBookAppointment}

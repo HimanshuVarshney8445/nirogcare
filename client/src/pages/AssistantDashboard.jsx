@@ -177,7 +177,6 @@ const AssistantDashboard = () => {
   const handleLogout = async () => {
     const response = await logoutUser();
     if (response?.status === 200) {
-      console.log("Logout successfully !!");
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
@@ -308,7 +307,6 @@ const AssistantDashboard = () => {
           duration: 3000,
           className: "doctor-toast",
         });
-        console.log("Notification sent successfully");
       } else {
         toast.error(response.message || "Notification could not be sent");
       }
@@ -834,7 +832,7 @@ const AssistantDashboard = () => {
 
               <div className="flex items-center space-x-4">
                 <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 animate-heartbeat" />
                 </button>
 
                 <div

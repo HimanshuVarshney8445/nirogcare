@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Loader, User, Phone, Video, MapPin } from 'lucide-react';
 import VideoCall from './VideoCall';
 
 // VideoCall component placeholder - replace with your actual VideoCall component
 
-
-
-const LiveComponentPatient = ({ onlineAppointment, name  }) => {
+const LiveComponentPatient = ({ onlineAppointment, name }) => {
   const [activeCall, setActiveCall] = useState(null);
-  const [loading , setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const isToday = (dateString) => {
     if (!dateString) return false;
@@ -43,7 +40,7 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
   };
 
 
-      useEffect(() => {
+  useEffect(() => {
     setLoading(false);
   }, [onlineAppointment]);
 
@@ -51,27 +48,27 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
     console.log(appointment._id)
     setActiveCall({
       callId: appointment._id,
-      name : appointment.bookedBy.name
+      name: appointment.bookedBy.name
     });
   };
 
   if (activeCall) {
     return (
       <div>
-        
-        <VideoCall 
+
+        <VideoCall
           callId={activeCall.callId}
-          name = {name}
-          role = 'patients'
+          name={name}
+          role='patients'
         />
-        
+
       </div>
     );
   }
 
 
 
-      if (loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center text-white flex flex-col items-center">
@@ -88,7 +85,7 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
         <h1 className="text-3xl font-bold text-white mb-8 text-center">
           Your Online Appointments
         </h1>
-        
+
         {!onlineAppointment || onlineAppointment.length === 0 ? (
           <div className="text-center text-gray-400 py-12">
             <Video size={64} className="mx-auto mb-4 opacity-50" />
@@ -97,7 +94,7 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {onlineAppointment.map((appointment) => (
-              <div 
+              <div
                 key={appointment._id}
                 className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:bg-gray-750 transition-all duration-300 hover:border-green-500 hover:shadow-lg hover:shadow-green-500/20"
               >
@@ -109,11 +106,10 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
                       {appointment.mode}
                     </span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    appointment.status === 'booked' 
-                      ? 'bg-green-900 text-green-300 border border-green-600' 
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${appointment.status === 'booked'
+                      ? 'bg-green-900 text-green-300 border border-green-600'
                       : 'bg-gray-700 text-gray-300'
-                  }`}>
+                    }`}>
                     {appointment.status}
                   </span>
                 </div>
@@ -149,7 +145,7 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
                       {formatDate(appointment.date)}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <Clock size={16} className="text-green-400" />
                     <span className="text-gray-300 text-sm">
@@ -174,28 +170,27 @@ const LiveComponentPatient = ({ onlineAppointment, name  }) => {
 
                 {/* Join Call Button */}
                 <button
-  onClick={() => handleJoinCall(appointment)}
-  disabled={!canJoinCall(appointment)}
-  className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg ${
-    canJoinCall(appointment)
-      ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-500/25 cursor-pointer'
-      : appointment.status?.toLowerCase() === 'booked' &&
-        appointment.mode === 'online' &&
-        !isToday(appointment.date)
-        ? 'bg-gradient-to-r from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-400/25 cursor-not-allowed'
-        : 'bg-gray-700 text-gray-300 cursor-not-allowed shadow-none'
-  }`}
->
-  <Video size={20} />
+                  onClick={() => handleJoinCall(appointment)}
+                  disabled={!canJoinCall(appointment)}
+                  className={`w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg ${canJoinCall(appointment)
+                      ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-green-500/25 cursor-pointer'
+                      : appointment.status?.toLowerCase() === 'booked' &&
+                        appointment.mode === 'online' &&
+                        !isToday(appointment.date)
+                        ? 'bg-gradient-to-r from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-400/25 cursor-not-allowed'
+                        : 'bg-gray-700 text-gray-300 cursor-not-allowed shadow-none'
+                    }`}
+                >
+                  <Video size={20} />
 
-  <span>
-    {appointment.status?.toLowerCase() === 'completed'
-      ? 'Completed'
-      : canJoinCall(appointment)
-        ? 'Join Call'
-        : 'Upcoming....'}
-  </span>
-</button>
+                  <span>
+                    {appointment.status?.toLowerCase() === 'completed'
+                      ? 'Completed'
+                      : canJoinCall(appointment)
+                        ? 'Join Call'
+                        : 'Upcoming....'}
+                  </span>
+                </button>
                 {!canJoinCall(appointment) && (
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     Video call becomes active on the appointment day for booked online visits.

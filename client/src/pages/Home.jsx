@@ -216,10 +216,10 @@ const HealthcareLandingPage = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleGetStarted}
-                className="hidden sm:flex items-center text-black bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/30"
+                className="btn-shine hidden sm:flex items-center text-black bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-500 hover:to-cyan-500 px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/30"
               >
-                <Zap className="w-4 h-4 mr-2" />
-                Get Started
+                <Zap className="w-4 h-4 mr-2 relative z-10" />
+                <span className="relative z-10">Get Started</span>
               </button>
 
               <button
@@ -256,9 +256,9 @@ const HealthcareLandingPage = () => {
             ))}
             <button
               onClick={handleGetStarted}
-              className="w-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black py-2 rounded-lg font-semibold mt-4"
+              className="btn-shine w-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black py-2 rounded-lg font-semibold mt-4"
             >
-              Get Started
+              <span className="relative z-10">Get Started</span>
             </button>
           </div>
         </div>

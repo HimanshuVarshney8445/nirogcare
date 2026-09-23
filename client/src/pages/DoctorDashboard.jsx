@@ -72,7 +72,6 @@ const DoctorDashboard = () => {
     const response = await getMe();
     if (response) {
       setDoctorDetails(response.user);
-      console.log("My info fetched successfully !!", response.user);
     }
   }
 
@@ -83,7 +82,6 @@ const DoctorDashboard = () => {
       const response = await getDoctorProfileApi();
 
       if (response?.doctor) {
-        console.log("Doctor profile:", response.doctor);
 
         setDoctorProfileDetail(response.doctor);
         setToggle(true);
@@ -104,7 +102,6 @@ const DoctorDashboard = () => {
     if (response) {
       setTodaysPatient(response.appointments);
       setFilteredPatients(response.appointments);
-      console.log("Today's patients fetched successfully !!", response.appointments);
     } else {
       console.log("Error fetching today's patients !!");
     }
@@ -205,7 +202,6 @@ const DoctorDashboard = () => {
   const handleLogout = async () => {
     const response = await logoutUser();
     if (response?.status === 200) {
-      console.log("Logout successfully !!");
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
@@ -604,7 +600,7 @@ const DoctorDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                <Bell className="w-5 h-5" />
+                <Bell className="w-5 h-5 animate-heartbeat" />
                 {notifications > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {notifications}

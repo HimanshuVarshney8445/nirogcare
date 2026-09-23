@@ -1,4 +1,5 @@
 import { LabAppointment } from "../models/LabAppointment.js";
+import { createAndSendNotification } from "../services/notification.js";
 import { Lab } from "../models/Lab.js";
 
 const getOwnedLab = (userId) => Lab.findOne({ userId });
@@ -184,21 +185,15 @@ export const getTodayAppointmentsForLab = async (req, res) => {
 
 export const uploadReportForAppointment = async (req, res) => {
   try {
-    console.log("========== UPLOAD REPORT ==========");
     const { id } = req.params;
     const { reportPDF } = req.body;
-
-    console.log("Appointment ID:", id);
-    console.log("Report PDF:", reportPDF);
-    console.log("Request body:", req.body);
-    console.log("Logged in user:", req.user);
 
     if (!id || !reportPDF) {
       return res.status(400).json({ error: "Missing appointment ID or report URL" });
     }
 
     const lab = await getOwnedLab(req.user.id);
-    console.log("Owned lab:", lab);
+
     if (!lab) return res.status(404).json({ message: "Lab profile not found" });
 
     const appointment = await LabAppointment.findOneAndUpdate(
@@ -206,12 +201,15 @@ export const uploadReportForAppointment = async (req, res) => {
       { reportPDF, status: "Completed" },
       { new: true }
     );
-    console.log("Updated appointment:", appointment);
 
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found" });
     }
-    console.log("✅ REPORT UPLOADED SUCCESSFULLY");
+    await createAndSendNotification({
+      userId: appointment.bookedBy,
+      title: "Lab Report Uploaded",
+      body: "Your lab report has been uploaded successfully. Please check your account to view the report.",
+    });
 
     res.status(200).json({
       message: "Report uploaded successfully",

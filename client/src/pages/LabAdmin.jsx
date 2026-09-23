@@ -185,14 +185,9 @@ const LabDashboard = () => {
 
     try {
       const appointmentsForToday = await getTodayLabAppointments(labId);
-      setTodayAppointments(
-        normalizeAppointments(appointmentsForToday)
-      );
+      setTodayAppointments(normalizeAppointments(appointmentsForToday));
     } catch (error) {
-      console.error(
-        "Error fetching today's appointments:",
-        error
-      );
+      console.error("Error fetching today's appointments:", error);
 
       setTodayAppointments([]);
     }
@@ -232,10 +227,7 @@ const LabDashboard = () => {
 
         setTotalPatientsToday(normalizeCount(response));
       } catch (error) {
-        console.error(
-          "Error fetching today's count:",
-          error
-        );
+        console.error("Error fetching today's count:", error);
 
         setTotalPatientsToday(0);
       } finally {
@@ -257,10 +249,10 @@ const LabDashboard = () => {
   const filtered = !search.trim()
     ? safeAppointments
     : safeAppointments.filter((appt) =>
-      (appt.bookedBy?.name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase().trim())
-    );
+        (appt.bookedBy?.name || "")
+          .toLowerCase()
+          .includes(search.toLowerCase().trim()),
+      );
 
   const navItems = [
     {
@@ -285,16 +277,14 @@ const LabDashboard = () => {
     },
   ];
 
-  const safeToday = Array.isArray(todayAppointments)
-    ? todayAppointments
-    : [];
+  const safeToday = Array.isArray(todayAppointments) ? todayAppointments : [];
 
   const completedCount = safeToday.filter(
-    (appointment) => appointment.status === "Completed"
+    (appointment) => appointment.status === "Completed",
   ).length;
 
   const activePatientsCount = safeToday.filter(
-    (appointment) => appointment.status !== "Completed"
+    (appointment) => appointment.status !== "Completed",
   ).length;
 
   const labStats = [
@@ -347,10 +337,7 @@ const LabDashboard = () => {
                   className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-green-500/50 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <stat.icon
-                      className={`w-8 h-8 ${stat.color}`}
-                    />
-
+                    <stat.icon className={`w-8 h-8 ${stat.color}`} />
                   </div>
 
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -361,9 +348,7 @@ const LabDashboard = () => {
                     )}
                   </h3>
 
-                  <p className="text-gray-400 text-sm">
-                    {stat.label}
-                  </p>
+                  <p className="text-gray-400 text-sm">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -372,7 +357,7 @@ const LabDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentAdmissions
                 totalAppointments={todayAppointments.filter(
-                  (appointment) => appointment.status !== "Completed"
+                  (appointment) => appointment.status !== "Completed",
                 )}
               />
 
@@ -433,9 +418,7 @@ const LabDashboard = () => {
                       type="text"
                       placeholder="Search patients..."
                       value={search}
-                      onChange={(e) =>
-                        setSearch(e.target.value)
-                      }
+                      onChange={(e) => setSearch(e.target.value)}
                       className="bg-gray-700/50 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white focus:border-blue-500 focus:outline-none"
                       disabled={appointmentsLoading}
                     />
@@ -445,11 +428,9 @@ const LabDashboard = () => {
 
               <div className="space-y-4">
                 {appointmentsLoading ? (
-                  Array.from({ length: 3 }).map(
-                    (_, index) => (
-                      <PatientSkeleton key={index} />
-                    )
-                  )
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <PatientSkeleton key={index} />
+                  ))
                 ) : filtered.length === 0 ? (
                   <div className="text-gray-400 text-center py-8">
                     {search.trim()
@@ -458,7 +439,6 @@ const LabDashboard = () => {
                   </div>
                 ) : (
                   filtered.map((appt) => (
-
                     <div
                       key={appt._id}
                       className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300"
@@ -466,17 +446,12 @@ const LabDashboard = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-white">
-                            {appt.bookedBy?.name ||
-                              "Unknown"}{" "}
+                            {appt.bookedBy?.name || "Unknown"}{" "}
                           </h4>
 
                           <p className="text-gray-400 text-sm">
-                            Test:{" "}
-                            {appt.testDetails?.testName ||
-                              "N/A"}{" "}
-                            | Type:{" "}
-                            {appt.testDetails?.testType ||
-                              "N/A"}
+                            Test: {appt.testDetails?.testName || "N/A"} | Type:{" "}
+                            {appt.testDetails?.testType || "N/A"}
                           </p>
                         </div>
 
@@ -489,26 +464,22 @@ const LabDashboard = () => {
                             <button
                               className="text-blue-600 bg-blue-400/20 px-3 py-1 rounded-full font-semibold hover:bg-blue-400/40 transition"
                               onClick={() => {
-                                setSelectedAppointment(
-                                  appt
-                                );
+                                setSelectedAppointment(appt);
 
-                                handleTabChange(
-                                  "send-report"
-                                );
+                                handleTabChange("send-report");
                               }}
                             >
                               Review
                             </button>
                           ) : (
                             <span
-                              className={`text-xs px-2 py-1 rounded-full ${appt.status === "Completed"
-                                ? "bg-green-400/20 text-green-400"
-                                : appt.status ===
-                                  "In Progress"
-                                  ? "bg-yellow-400/20 text-yellow-400"
-                                  : "bg-blue-400/20 text-blue-400"
-                                }`}
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                appt.status === "Completed"
+                                  ? "bg-green-400/20 text-green-400"
+                                  : appt.status === "In Progress"
+                                    ? "bg-yellow-400/20 text-yellow-400"
+                                    : "bg-blue-400/20 text-blue-400"
+                              }`}
                             >
                               {appt.status}
                             </span>
@@ -533,9 +504,7 @@ const LabDashboard = () => {
                   className="text-blue-400 mx-auto mb-4"
                 />
 
-                <p className="text-gray-400">
-                  Loading profile...
-                </p>
+                <p className="text-gray-400">Loading profile...</p>
               </div>
             </div>
           );
@@ -579,10 +548,7 @@ const LabDashboard = () => {
                 setToggle(true);
                 setIsEditingProfile(false);
               } catch (error) {
-                console.error(
-                  "Error after registration:",
-                  error
-                );
+                console.error("Error after registration:", error);
               } finally {
                 setLabLoading(false);
               }
@@ -594,23 +560,18 @@ const LabDashboard = () => {
       case "send-report":
         return (
           <div className="p-6 space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Report
-            </h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Report</h2>
 
             {!selectedAppointment ? (
               <div className="bg-gray-800/30 p-8 rounded-xl border border-gray-700/50 text-center">
                 <FlaskConical className="w-12 h-12 text-gray-500 mx-auto mb-4" />
 
                 <p className="text-gray-400 text-lg">
-                  Please select a patient from the Today's
-                  Patients list first.
+                  Please select a patient from the Today's Patients list first.
                 </p>
 
                 <button
-                  onClick={() =>
-                    handleTabChange("patients")
-                  }
+                  onClick={() => handleTabChange("patients")}
                   className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   Go to Patients
@@ -624,11 +585,8 @@ const LabDashboard = () => {
                   </h3>
 
                   <p className="text-gray-300">
-                    {selectedAppointment.bookedBy?.name ||
-                      "Unknown"}{" "}
-                    -{" "}
-                    {selectedAppointment.testDetails
-                      ?.testName || "N/A"}
+                    {selectedAppointment.bookedBy?.name || "Unknown"} -{" "}
+                    {selectedAppointment.testDetails?.testName || "N/A"}
                   </p>
                 </div>
 
@@ -654,8 +612,9 @@ const LabDashboard = () => {
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* ==================SIDEBAR================== */}
       <div
-        className={`${toggleSideBar ? "w-64" : "w-20"
-          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+        className={`${
+          toggleSideBar ? "w-64" : "w-20"
+        } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
       >
         {/* Logo */}
         <div className="p-3 border-b border-gray-700/50">
@@ -679,18 +638,14 @@ const LabDashboard = () => {
                 setToggleSideBar((prev) => {
                   const newValue = !prev;
 
-                  localStorage.setItem(
-                    "labSidebar",
-                    JSON.stringify(newValue)
-                  );
+                  localStorage.setItem("labSidebar", JSON.stringify(newValue));
 
                   return newValue;
                 });
               }}
-              className={`${toggleSideBar
-                ? ""
-                : "mt-[10px] mb-[11px] mr-[10px]"
-                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+              className={`${
+                toggleSideBar ? "" : "mt-[10px] mb-[11px] mr-[10px]"
+              } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
             />
           </div>
         </div>
@@ -701,39 +656,33 @@ const LabDashboard = () => {
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() =>
-                    handleTabChange(item.id)
-                  }
-                  disabled={
-                    labLoading &&
-                    item.id === "profile"
-                  }
-                  className={`w-full flex items-center ${toggleSideBar
-                    ? "space-x-3"
-                    : "justify-center"
-                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                  onClick={() => handleTabChange(item.id)}
+                  disabled={labLoading && item.id === "profile"}
+                  className={`w-full flex items-center ${
+                    toggleSideBar ? "space-x-3" : "justify-center"
+                  } cursor-pointer p-3 rounded-lg relative ${
+                    activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
                       : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                    } ${labLoading &&
-                      item.id === "profile"
+                  } ${
+                    labLoading && item.id === "profile"
                       ? "opacity-50 cursor-not-allowed"
                       : ""
-                    }`}
+                  }`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
 
                   {toggleSideBar && (
-                    <span className="flex-1 text-left">
-                      {item.label}
-                    </span>
+                    <span className="flex-1 text-left">{item.label}</span>
                   )}
 
                   {activeTab === item.id && (
                     <span
-                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                 </button>
@@ -746,10 +695,9 @@ const LabDashboard = () => {
         <div className="p-4 border-t border-gray-700/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${toggleSideBar
-              ? "space-x-3 justify-start"
-              : "justify-center"
-              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+            className={`w-full flex items-center ${
+              toggleSideBar ? "space-x-3 justify-start" : "justify-center"
+            } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
 
@@ -783,7 +731,7 @@ const LabDashboard = () => {
               <div className="flex items-center space-x-4">
                 {/* Notifications */}
                 <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 animate-heartbeat" />
 
                   {notifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -793,35 +741,25 @@ const LabDashboard = () => {
                 </button>
 
                 {/* Lab User */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditingProfile(false);
-                    navigate("/labAdmin/dashboard/profile");
-                  }}
-                  className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                <div
+                  onClick={() => handleTabChange("profile")}
+                  className="flex items-center space-x-2 cursor-pointer group"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
                     <User className="w-4 h-4 text-white" />
                   </div>
 
                   <span className="text-white font-medium">
-                    {labLoading ? (
-                      <LoadingSpinner size="w-4 h-4" />
-                    ) : (
-                      labData?.name || "Admin"
-                    )}
+                    {labData?.name}
                   </span>
-                </button>
+                </div>
               </div>
             </div>
           </header>
         )}
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderContent()}
-        </main>
+        <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
       </div>
     </div>
   );

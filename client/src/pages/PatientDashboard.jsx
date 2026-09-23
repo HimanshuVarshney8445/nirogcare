@@ -33,15 +33,12 @@ import {
   Weight,
   Clock,
   Plus,
-  Search,
-  Filter,
   Calendar,
   Stethoscope,
   PanelLeft,
   Monitor,
   BotMessageSquare,
   Globe,
-  Globe2,
 } from "lucide-react";
 
 import { getMe } from "../services/getMeServices";
@@ -51,7 +48,6 @@ import { AiIcon } from "../assets/robot";
 import ChatBot from "../component/ChatBot";
 import MedicalRecordPatient from "../component/MedicalRecordPatient";
 import { getAllLabReport } from "../services/labServices";
-import ThemeToggleSwitch from "../component/ThemeButton";
 import VideoCall from "../component/VideoCall";
 import { getOnlineApointments } from "../services/appointmentServices";
 import LiveComponentPatient from "../component/LiveComponentPatient";
@@ -128,7 +124,6 @@ const PatientDashboard = () => {
         const token = await requestFCMToken();
         if (token) {
           await updateFcmTokenApi(token);
-          console.log("Patient FCM token updated successfully");
         }
       } catch (err) {
         console.error("FCM Initialization error:", err);
@@ -202,7 +197,6 @@ const PatientDashboard = () => {
   const handleLogout = async () => {
     const response = await logoutUser();
     if (response?.status === 200) {
-      console.log("Logout successfully !!");
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
@@ -274,7 +268,6 @@ const PatientDashboard = () => {
           const response = await getAllNearbyLabs({ lat: latitude, lng: longitude });
 
           if (response) {
-            console.log(response);
             setLabs(response?.labs || []);
           }
         },
@@ -301,7 +294,6 @@ const PatientDashboard = () => {
       const response = await getAllLabReport();
       if (response) {
         setLabReport(response.reports)
-        console.log(response);
       }
 
     } catch (error) {
@@ -324,7 +316,6 @@ const PatientDashboard = () => {
       const response = await getOnlineApointments();
       if (response) {
         setOnlineAppointment(response?.appointments)
-
       }
 
     } catch {
@@ -340,9 +331,6 @@ const PatientDashboard = () => {
     }
 
   }, [activeTab])
-
-
-
 
 
   const navItems = [
@@ -371,32 +359,35 @@ const PatientDashboard = () => {
     switch (type) {
       case "heartRate": {
         const heartRate = Number(value);
-        if (heartRate < 50 || heartRate > 110) return { label: "risky", color: "text-red-400" };
-        if (heartRate < 60 || heartRate > 100) return { label: "moderate", color: "text-yellow-300" };
-        return { label: "normal", color: "text-emerald-400" };
+        if (heartRate < 50 || heartRate > 110) return {
+          label: "risky", color: "text-red-400",
+          bg: "bg-red-500/20"
+        };
+        if (heartRate < 60 || heartRate > 100) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
+        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
       }
       case "temperature": {
         const temp = Number(value);
-        if (temp < 95 || temp > 103) return { label: "risky", color: "text-red-400" };
-        if (temp < 97 || temp > 99.5) return { label: "moderate", color: "text-yellow-300" };
-        return { label: "normal", color: "text-emerald-400" };
+        if (temp < 95 || temp > 103) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (temp < 97 || temp > 99.5) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
+        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
       }
       case "bloodPressure": {
         const { systolic, diastolic } = parseBloodPressure(value);
-        if (!systolic || !diastolic) return { label: "unknown", color: "text-gray-400" };
-        if (systolic >= 180 || diastolic >= 120) return { label: "risky", color: "text-red-400" };
-        if (systolic >= 140 || diastolic >= 90) return { label: "moderate", color: "text-yellow-300" };
-        if (systolic < 90 || diastolic < 60) return { label: "moderate", color: "text-yellow-300" };
-        return { label: "normal", color: "text-emerald-400" };
+        if (!systolic || !diastolic) return { label: "unknown", color: "text-gray-400", bg: "bg-gray-500/20" };
+        if (systolic >= 180 || diastolic >= 120) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (systolic >= 140 || diastolic >= 90) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
+        if (systolic < 90 || diastolic < 60) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
+        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
       }
       case "oxygenLevel": {
         const oxygen = Number(value);
-        if (oxygen < 90) return { label: "risky", color: "text-red-400" };
-        if (oxygen < 95) return { label: "moderate", color: "text-yellow-300" };
-        return { label: "normal", color: "text-emerald-400" };
+        if (oxygen < 90) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (oxygen < 95) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
+        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
       }
       default:
-        return { label: "unknown", color: "text-gray-400" };
+        return { label: "unknown", color: "text-gray-400", bg: "bg-gray-500/20" };
     }
   };
 
@@ -491,7 +482,16 @@ const PatientDashboard = () => {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                    <span className="text-xs text-green-400 bg-green-400/20 px-2 py-1 rounded-full">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${stat.status === "risky"
+                          ? "text-red-400 bg-red-400/20"
+                          : stat.status === "moderate"
+                            ? "text-yellow-300 bg-yellow-300/20"
+                            : stat.status === "normal"
+                              ? "text-emerald-400 bg-emerald-400/20"
+                              : "text-gray-400 bg-gray-400/20"
+                        }`}
+                    >
                       {stat.status}
                     </span>
                   </div>
@@ -869,22 +869,21 @@ const PatientDashboard = () => {
                   className="relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer"
                   title="View Notifications"
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 animate-heartbeat" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                       {unreadCount}
                     </span>
                   )}
                 </button>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center">
-                    <button
-                      className="cursor-pointer"
-                      onClick={() => handleTabChange("profile")}
-                    >
-                      <User className="w-4 h-4 text-white" />
-                    </button>
+                <div
+                  onClick={() => handleTabChange("profile")}
+                  className="flex items-center space-x-2 cursor-pointer group"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
+                    <User className="w-4 h-4 text-white" />
                   </div>
+
                   <span className="text-white font-medium">
                     {userData?.user?.name}
                   </span>

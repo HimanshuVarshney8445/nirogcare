@@ -23,9 +23,6 @@ export const doctorProfile = async (req, res) => {
 
     let doctor = await Doctor.findOne({ userId });
 
-    // ==========================================
-    // CREATE NEW DOCTOR / SEND HOSPITAL REQUEST
-    // ==========================================
     if (!doctor) {
       if (
         !gender ||
@@ -68,10 +65,6 @@ export const doctorProfile = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // UPDATE EXISTING DOCTOR PROFILE
-    // ==========================================
-
     doctor.gender = gender || doctor.gender;
 
     doctor.specialization =
@@ -87,10 +80,6 @@ export const doctorProfile = async (req, res) => {
 
     doctor.education =
       education || doctor.education;
-
-    // IMPORTANT:
-    // Do not allow an existing doctor to change
-    // hospital from the profile update page.
 
     await doctor.save();
 
