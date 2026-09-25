@@ -19,7 +19,7 @@ import {
   IdCard,
 } from "lucide-react";
 import { toast } from "sonner";
-import { logoutUser } from "../services/logoutService";
+import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getHospital } from "../services/hospitalsServices";
 import HospitalProfile from "../component/HospitalProfile";
@@ -35,6 +35,7 @@ import AllAssistants from "../component/AllAssistants";
 import AddPatientModal from "../component/AddPatientModal";
 
 const HospitalDashboard = () => {
+  const { logout } = useAuth();
   const { tab } = useParams();
 
   const activeTab = tab || "home";
@@ -225,15 +226,18 @@ const HospitalDashboard = () => {
   ];
 
   const handleLogout = async () => {
-    const response = await logoutUser();
-    if (response?.status === 200) {
+    try {
+      await logout();
+
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
       });
-      navigate("/auth");
-    } else {
-      toast.error("Logout failed!");
+
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      toast.error("Logout failed");
+      console.error("Logout error:", error);
     }
   };
 

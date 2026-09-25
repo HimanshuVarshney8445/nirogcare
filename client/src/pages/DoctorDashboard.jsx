@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Home,
@@ -15,34 +15,38 @@ import {
   Monitor,
   PanelLeft,
   Calendar,
-  Activity
-} from 'lucide-react';
-import { logoutUser } from '../services/logoutService';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import UpdateDoctorProfile from '../component/UpdateDoctorProfile';
-import { getMe } from '../services/getMeServices';
-import { getDoctorProfileApi, todaysOnlinePatientsApi } from '../services/doctorServices';
-import { UpdatedDoctor } from '../component/UpdatedDoctor';
-import { todaysPatientsApi } from '../services/doctorServices';
-import DiagnosisForm from '../component/DiagnosisForm';
-import { addMedicalRecordAPI } from '../services/medicalRecordServices';
-import VideoCall from '../component/VideoCall';
-import DoctorOnlinePatients from '../component/DoctorOnlinePatients';
+  Activity,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import UpdateDoctorProfile from "../component/UpdateDoctorProfile";
+import { getMe } from "../services/getMeServices";
+import {
+  getDoctorProfileApi,
+  todaysOnlinePatientsApi,
+} from "../services/doctorServices";
+import { UpdatedDoctor } from "../component/UpdatedDoctor";
+import { todaysPatientsApi } from "../services/doctorServices";
+import DiagnosisForm from "../component/DiagnosisForm";
+import { addMedicalRecordAPI } from "../services/medicalRecordServices";
+import VideoCall from "../component/VideoCall";
+import DoctorOnlinePatients from "../component/DoctorOnlinePatients";
 
 const DoctorDashboard = () => {
+  const { logout } = useAuth();
   const { tab } = useParams();
   const activeTab = tab || "home";
   const handleTabChange = (tab) => {
     navigate(`/doctor/dashboard/${tab}`);
-  }
+  };
   const [notifications] = useState(3);
   const [toggleSideBar, setToggleSideBar] = useState(false);
   const [doctorDetails, setDoctorDetails] = useState(null);
   const [doctorProfileDetail, setDoctorProfileDetail] = useState(null);
   const [toggle, setToggle] = useState(false);
   const [todaysPatient, setTodaysPatient] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
@@ -73,7 +77,7 @@ const DoctorDashboard = () => {
     if (response) {
       setDoctorDetails(response.user);
     }
-  }
+  };
 
   const getDoctorDetails = async () => {
     try {
@@ -82,13 +86,11 @@ const DoctorDashboard = () => {
       const response = await getDoctorProfileApi();
 
       if (response?.doctor) {
-
         setDoctorProfileDetail(response.doctor);
         setToggle(true);
       } else {
         setToggle(false);
       }
-
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
       setToggle(false);
@@ -105,69 +107,67 @@ const DoctorDashboard = () => {
     } else {
       console.log("Error fetching today's patients !!");
     }
-  }
+  };
 
   // Filter patients based on search query
   useEffect(() => {
     if (!searchQuery) {
       setFilteredPatients(todaysPatient);
     } else {
-      const filtered = todaysPatient.filter(patient =>
-        patient?.bookedBy?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?.contact?.includes(searchQuery) ||
-        patient?.timeSlot?.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = todaysPatient.filter(
+        (patient) =>
+          patient?.bookedBy?.name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          patient?._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          patient?.contact?.includes(searchQuery) ||
+          patient?.timeSlot?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredPatients(filtered);
     }
   }, [searchQuery, todaysPatient]);
 
   useEffect(() => {
-    if (activeTab === 'profile') {
+    if (activeTab === "profile") {
       getMyDetails();
       getDoctorDetails();
     }
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'home') {
+    if (activeTab === "home") {
       getMyDetails();
     }
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'home' || activeTab === 'patients') {
+    if (activeTab === "home" || activeTab === "patients") {
       getTodaysPatient();
     }
   }, [activeTab]);
-
-
 
   const getOnlinePatientsAppointments = async () => {
     try {
       const response = await todaysOnlinePatientsApi();
       if (response) {
-        setOnlineAppointments(response.appointments)
+        setOnlineAppointments(response.appointments);
       }
-
     } catch {
       toast.error("Failed to load online appointments");
-
     }
-  }
+  };
 
   useEffect(() => {
-    if (activeTab === 'live') {
+    if (activeTab === "live") {
       getOnlinePatientsAppointments();
     }
-
-  }, [activeTab])
+  }, [activeTab]);
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'profile', label: 'My Profile', icon: User },
-    { id: 'patients', label: 'Today\'s Patients', icon: Users },
-    { id: 'live', label: 'Live Chat', icon: Monitor },
+    { id: "home", label: "Home", icon: Home },
+    { id: "profile", label: "My Profile", icon: User },
+    { id: "patients", label: "Today's Patients", icon: Users },
+    { id: "live", label: "Live Chat", icon: Monitor },
   ];
 
   const handleDiagnose = (patient) => {
@@ -185,33 +185,31 @@ const DoctorDashboard = () => {
       // Here you would call your API to save the diagnosis
       const response = await addMedicalRecordAPI(diagnosisData);
       if (response) {
-        console.log(response)
+        console.log(response);
       }
 
-      toast.success('Diagnosis saved successfully!', {
+      toast.success("Diagnosis saved successfully!", {
         duration: 3000,
         className: "doctor-toast",
       });
       handleCloseDiagnosisForm();
-
     } catch (error) {
-      console.error('Error saving diagnosis:', error);
-      toast.error('Failed to save diagnosis. Please try again.');
+      console.error("Error saving diagnosis:", error);
+      toast.error("Failed to save diagnosis. Please try again.");
     }
   };
   const handleLogout = async () => {
-    const response = await logoutUser();
-    if (response?.status === 200) {
+    try {
+      await logout();
+
       toast.success("Logout successful!", {
         duration: 3000,
         className: "doctor-toast",
       });
       navigate("/auth");
-    } else {
+    } catch {
       toast.error("Logout failed!");
     }
-
-
   };
 
   const doctorInfo = {
@@ -224,8 +222,8 @@ const DoctorDashboard = () => {
     experience: doctorProfileDetail?.experience,
     education: doctorProfileDetail?.education,
     license: doctorProfileDetail?.licenseNumber,
-    todaySchedule: '9:00 AM - 5:00 PM',
-    nextAppointment: '2:30 PM - John Smith'
+    todaySchedule: "9:00 AM - 5:00 PM",
+    nextAppointment: "2:30 PM - John Smith",
   };
 
   const todaysStats = [
@@ -233,23 +231,25 @@ const DoctorDashboard = () => {
       icon: Users,
       label: "Today's Patient",
       value: todaysPatient
-        .filter(p => p.status !== 'completed' && p.status !== 'cancelled')
+        .filter((p) => p.status !== "completed" && p.status !== "cancelled")
         .length.toString(),
-      // change: '+2 from yesterday', 
-      color: 'text-blue-400'
+      // change: '+2 from yesterday',
+      color: "text-blue-400",
     },
     {
       icon: CheckCircle,
-      label: 'Completed',
-      value: todaysPatient.filter(p => p.status === 'completed').length.toString(),
-      change: `${Math.round((todaysPatient.filter(p => p.status === 'completed').length / todaysPatient.length) * 100) || 0}% done`,
-      color: 'text-green-400'
+      label: "Completed",
+      value: todaysPatient
+        .filter((p) => p.status === "completed")
+        .length.toString(),
+      change: `${Math.round((todaysPatient.filter((p) => p.status === "completed").length / todaysPatient.length) * 100) || 0}% done`,
+      color: "text-green-400",
     },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home':
+      case "home":
         return (
           <div className="space-y-6">
             {/* Welcome Section */}
@@ -265,11 +265,16 @@ const DoctorDashboard = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
               {todaysStats.map((stat, index) => (
-                <div key={index} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+                <div
+                  key={index}
+                  className="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">{stat.value}</h3>
+                  <h3 className="text-2xl font-bold text-white">
+                    {stat.value}
+                  </h3>
                   <p className="text-gray-400 text-sm">{stat.label}</p>
                   <p className="text-gray-500 text-xs">{stat.change}</p>
                 </div>
@@ -286,7 +291,8 @@ const DoctorDashboard = () => {
                 <div className="space-y-3">
                   {todaysPatient
                     .filter(
-                      p => p.status !== 'completed' && p.status !== 'cancelled'
+                      (p) =>
+                        p.status !== "completed" && p.status !== "cancelled",
                     )
                     .slice(0, 3)
                     .map((patient, index) => (
@@ -311,14 +317,15 @@ const DoctorDashboard = () => {
                             </p>
 
                             <span
-                              className={`text-xs px-2 py-1 rounded-full ${patient.status === 'Emergency'
-                                ? 'bg-red-400/20 text-red-400'
-                                : patient.status === 'In Progress'
-                                  ? 'bg-yellow-400/20 text-yellow-400'
-                                  : 'bg-blue-400/20 text-blue-400'
-                                }`}
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                patient.status === "Emergency"
+                                  ? "bg-red-400/20 text-red-400"
+                                  : patient.status === "In Progress"
+                                    ? "bg-yellow-400/20 text-yellow-400"
+                                    : "bg-blue-400/20 text-blue-400"
+                              }`}
                             >
-                              {patient.status || 'Waiting'}
+                              {patient.status || "Waiting"}
                             </span>
                           </div>
                         </div>
@@ -326,12 +333,12 @@ const DoctorDashboard = () => {
                     ))}
 
                   {todaysPatient.filter(
-                    p => p.status !== 'completed' && p.status !== 'cancelled'
+                    (p) => p.status !== "completed" && p.status !== "cancelled",
                   ).length === 0 && (
-                      <div className="text-gray-400 text-center py-4">
-                        No upcoming appointments
-                      </div>
-                    )}
+                    <div className="text-gray-400 text-center py-4">
+                      No upcoming appointments
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -344,21 +351,27 @@ const DoctorDashboard = () => {
                   <div className="bg-green-500/20 p-3 rounded-lg border border-green-500/30">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-5 h-5 text-green-400" />
-                      <span className="text-green-400 font-medium">Completed - Patient checkup</span>
+                      <span className="text-green-400 font-medium">
+                        Completed - Patient checkup
+                      </span>
                     </div>
                     <p className="text-gray-400 text-sm mt-1">9:00 AM</p>
                   </div>
                   <div className="bg-yellow-500/20 p-3 rounded-lg border border-yellow-500/30">
                     <div className="flex items-center space-x-2">
                       <Clock className="w-5 h-5 text-yellow-400" />
-                      <span className="text-yellow-400 font-medium">In Progress - Patient consultation</span>
+                      <span className="text-yellow-400 font-medium">
+                        In Progress - Patient consultation
+                      </span>
                     </div>
                     <p className="text-gray-400 text-sm mt-1">2:00 PM</p>
                   </div>
                   <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30">
                     <div className="flex items-center space-x-2">
                       <AlertCircle className="w-5 h-5 text-red-400" />
-                      <span className="text-red-400 font-medium">Emergency - Urgent case handled</span>
+                      <span className="text-red-400 font-medium">
+                        Emergency - Urgent case handled
+                      </span>
                     </div>
                     <p className="text-gray-400 text-sm mt-1">4:15 PM</p>
                   </div>
@@ -368,42 +381,38 @@ const DoctorDashboard = () => {
           </div>
         );
 
-      case 'profile':
+      case "profile":
         if (loadingProfile) {
           return (
             <div className="flex items-center justify-center min-h-[400px]">
               <div className="text-center">
                 <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 
-                <p className="text-gray-400">
-                  Loading your profile...
-                </p>
+                <p className="text-gray-400">Loading your profile...</p>
               </div>
             </div>
           );
         }
 
-        return (
-          toggle ? (
-            <UpdatedDoctor
-              doctorInfo={doctorInfo}
-              onEdit={() => setToggle(false)}
-            />
-          ) : (
-            <UpdateDoctorProfile
-              doctorDetails={doctorDetails}
-              onSuccess={(updatedDoctor) => {
-                if (updatedDoctor) {
-                  setDoctorProfileDetail(updatedDoctor);
-                }
+        return toggle ? (
+          <UpdatedDoctor
+            doctorInfo={doctorInfo}
+            onEdit={() => setToggle(false)}
+          />
+        ) : (
+          <UpdateDoctorProfile
+            doctorDetails={doctorDetails}
+            onSuccess={(updatedDoctor) => {
+              if (updatedDoctor) {
+                setDoctorProfileDetail(updatedDoctor);
+              }
 
-                setToggle(true);
-              }}
-            />
-          )
+              setToggle(true);
+            }}
+          />
         );
 
-      case 'patients':
+      case "patients":
         return (
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
@@ -429,12 +438,19 @@ const DoctorDashboard = () => {
               <div className="space-y-4">
                 {filteredPatients.length > 0 ? (
                   filteredPatients.map((patient, index) => (
-                    <div key={index} className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300">
+                    <div
+                      key={index}
+                      className="bg-gray-700/30 p-4 rounded-lg border border-gray-600/30 hover:border-blue-500/50 transition-all duration-300"
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex-1">
-                          <h4 className="font-medium text-white">{patient?.bookedBy?.name}</h4>
+                          <h4 className="font-medium text-white">
+                            {patient?.bookedBy?.name}
+                          </h4>
                           {/* <p className="text-gray-400 text-sm">ID: {patient.bookedBy?._id}</p> */}
-                          <p className="text-gray-400 text-sm">Age: {patient.age}</p>
+                          <p className="text-gray-400 text-sm">
+                            Age: {patient.age}
+                          </p>
                           <p className="text-gray-400 text-sm flex items-center">
                             <Phone className="w-4 h-4 mr-1" />
                             Contact: {patient.contact}
@@ -478,15 +494,14 @@ const DoctorDashboard = () => {
           </div>
         );
 
-
       case "live":
-
         return (
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
-
-              <DoctorOnlinePatients onlineAppointments={onlineAppointments} name={doctorInfo.name} />
-
+              <DoctorOnlinePatients
+                onlineAppointments={onlineAppointments}
+                name={doctorInfo.name}
+              />
             </div>
           </div>
         );
@@ -499,8 +514,9 @@ const DoctorDashboard = () => {
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`${toggleSideBar ? "w-64" : "w-20"
-          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+        className={`${
+          toggleSideBar ? "w-64" : "w-20"
+        } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
       >
         <div className="p-3 border-b border-gray-700/50">
           <div className="flex mt-0.5 items-center justify-between">
@@ -520,10 +536,9 @@ const DoctorDashboard = () => {
 
             <PanelLeft
               onClick={() => setToggleSideBar((prev) => !prev)}
-              className={`${toggleSideBar
-                ? ""
-                : "mt-[10px] mb-[11px] mr-[10px]"
-                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+              className={`${
+                toggleSideBar ? "" : "mt-[10px] mb-[11px] mr-[10px]"
+              } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
             />
           </div>
         </div>
@@ -535,26 +550,27 @@ const DoctorDashboard = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
-                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                  className={`w-full flex items-center ${
+                    toggleSideBar ? "space-x-3" : "justify-center"
+                  } cursor-pointer p-3 rounded-lg relative ${
+                    activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
                       : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                    }`}
+                  }`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
 
                   {toggleSideBar && (
-                    <span className="flex-1 text-left">
-                      {item.label}
-                    </span>
+                    <span className="flex-1 text-left">{item.label}</span>
                   )}
 
                   {activeTab === item.id && (
                     <span
-                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                 </button>
@@ -567,10 +583,9 @@ const DoctorDashboard = () => {
         <div className="p-4 border-t border-gray-700/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${toggleSideBar
-              ? "space-x-3 justify-start"
-              : "justify-center"
-              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+            className={`w-full flex items-center ${
+              toggleSideBar ? "space-x-3 justify-start" : "justify-center"
+            } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
             {toggleSideBar && <span>Logout</span>}
@@ -581,52 +596,56 @@ const DoctorDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        {activeTab === 'home' ? (<header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-white capitalize">
-                {activeTab === 'home' ? 'Dashboard' :
-                  activeTab === 'profile' ? 'My Profile' :
-                    'Today\'s Patients'}
-              </h2>
-              <p className="text-gray-400 text-sm">
-                {new Date().toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-                <Bell className="w-5 h-5 animate-heartbeat" />
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </button>
-              <div
-                onClick = {() => navigate('/doctor/dashboard/profile')}
-                className="flex items-center space-x-2 cursor-pointer group"
-              >
-                <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
-                  <User className="w-4 h-4 text-white" />
-                </div>
+        {activeTab === "home" ? (
+          <header className="bg-gray-900/30 border-b border-gray-700/50 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-white capitalize">
+                  {activeTab === "home"
+                    ? "Dashboard"
+                    : activeTab === "profile"
+                      ? "My Profile"
+                      : "Today's Patients"}
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+                  <Bell className="w-5 h-5 animate-heartbeat" />
+                  {notifications > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {notifications}
+                    </span>
+                  )}
+                </button>
+                <div
+                  onClick={() => navigate("/doctor/dashboard/profile")}
+                  className="flex items-center space-x-2 cursor-pointer group"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-700 to-blue-700 rounded-full flex items-center justify-center group-hover:ring-2 group-hover:ring-emerald-400 transition-all duration-200">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
 
-                <span className="text-white font-medium">
-                  Dr. { doctorInfo.name }
-                </span>
+                  <span className="text-white font-medium">
+                    Dr. {doctorInfo.name}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </header>) : ""}
+          </header>
+        ) : (
+          ""
+        )}
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          {renderContent()}
-        </main>
+        <main className="flex-1 p-6 overflow-y-auto">{renderContent()}</main>
       </div>
 
       {/* Diagnosis Form Modal */}
@@ -638,7 +657,6 @@ const DoctorDashboard = () => {
         />
       )}
     </div>
-  )
-
+  );
 };
 export default DoctorDashboard;

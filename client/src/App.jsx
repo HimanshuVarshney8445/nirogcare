@@ -10,13 +10,13 @@ import AssistantDashboard from "./pages/AssistantDashboard";
 import LabAdmin from "./pages/LabAdmin";
 import { ProtectRole } from "./component/protect_role";
 import HospitalProfileForm from "./component/HospitalProfile";
+import RootRoute from "./RootRoute";
 
 const App = () => {
   return (
     <>
-
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/auth" element={<Auth />} />
 
         <Route
@@ -25,7 +25,6 @@ const App = () => {
             <ProtectRole>
               <SelectRole />
             </ProtectRole>
-
           }
         />
         <Route
@@ -101,9 +100,16 @@ const App = () => {
           path="/unauthorized"
           element={
             <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-center p-4">
-              <h1 className="text-3xl font-bold text-red-500 mb-4">Unauthorized Access</h1>
-              <p className="text-gray-400 mb-6">You do not have permission to access this page.</p>
-              <a href="/" className="px-6 py-2.5 bg-emerald-500 text-black font-semibold rounded-xl hover:bg-emerald-400 transition-colors">
+              <h1 className="text-3xl font-bold text-red-500 mb-4">
+                Unauthorized Access
+              </h1>
+              <p className="text-gray-400 mb-6">
+                You do not have permission to access this page.
+              </p>
+              <a
+                href="/"
+                className="px-6 py-2.5 bg-emerald-500 text-black font-semibold rounded-xl hover:bg-emerald-400 transition-colors"
+              >
                 Return Home
               </a>
             </div>
@@ -111,7 +117,6 @@ const App = () => {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
     </>
   );
 };

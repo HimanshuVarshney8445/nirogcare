@@ -16,20 +16,23 @@ import {
   Send,
   PanelLeft,
 } from "lucide-react";
-import { logoutUser } from "../services/logoutService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import AssistantForm from "../component/UpdatedAssistantProfile";
 import { getMe } from "../services/getMeServices";
 import { getAssistantProfile } from "../services/assistantServices";
+import { useAuth } from "../hooks/useAuth";
 import AssistantData from "../component/AssistantData";
-import { getAllApointments, updateAppointmentStatus } from "../services/appointmentServices";
+import {
+  getAllApointments,
+  updateAppointmentStatus,
+} from "../services/appointmentServices";
 import { notifyViaFCM } from "../services/firebaseServices";
 import LoaderOnly from "../component/Loader";
 import { VitalSignsForm } from "../component/VitalStats";
 
-
 const AssistantDashboard = () => {
+  const { logout } = useAuth();
   const [toggleSideBar, setToggleSideBar] = useState(true);
   const { tab } = useParams();
   const activeTab = tab || "home";
@@ -64,7 +67,6 @@ const AssistantDashboard = () => {
             getMe(),
             getAllApointments(),
             getAssistantProfile(),
-
           ]);
 
         if (userResponse) {
@@ -89,11 +91,12 @@ const AssistantDashboard = () => {
     fetchInitialData();
   }, []);
 
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
 
   const isToday = (dateString) => {
     if (!dateString) return false;
@@ -110,9 +113,7 @@ const AssistantDashboard = () => {
   };
 
   const todaysAppointments = useMemo(() => {
-    return appointments.filter((appointment) =>
-      isToday(appointment?.date)
-    );
+    return appointments.filter((appointment) => isToday(appointment?.date));
   }, [appointments, currentDate]);
 
   const navItems = [
@@ -133,7 +134,13 @@ const AssistantDashboard = () => {
 
     todaysAppointments.forEach((appointment) => {
       const queueItem = {
-        patientId: appointment?.bookedBy?._id || (typeof appointment?.bookedBy === "string" ? appointment?.bookedBy : null) || appointment?.patientId?._id || appointment?.patientId,
+        patientId:
+          appointment?.bookedBy?._id ||
+          (typeof appointment?.bookedBy === "string"
+            ? appointment?.bookedBy
+            : null) ||
+          appointment?.patientId?._id ||
+          appointment?.patientId,
         id: appointment?._id,
         name: appointment?.bookedBy?.name || "Unknown Patient",
         age: appointment?.age || "N/A",
@@ -173,18 +180,16 @@ const AssistantDashboard = () => {
     setQueueData(categorizedAppointments);
   }, [appointments]);
 
-
   const handleLogout = async () => {
-    const response = await logoutUser();
-    if (response?.status === 200) {
-      toast.success("Logout successful!", {
-        duration: 3000,
-        className: "doctor-toast",
-      });
-      navigate("/auth");
-    }
-  };
+    await logout();
 
+    toast.success("Logout successful!", {
+      duration: 3000,
+      className: "doctor-toast",
+    });
+
+    navigate("/auth", { replace: true });
+  };
 
   const handleDragStart = (e, patient) => {
     setDraggedPatient(patient);
@@ -228,7 +233,7 @@ const AssistantDashboard = () => {
     if (!draggedPatient) return;
 
     const sourceColumn = Object.keys(queueData).find((key) =>
-      queueData[key].some((patient) => patient.id === draggedPatient.id)
+      queueData[key].some((patient) => patient.id === draggedPatient.id),
     );
 
     if (sourceColumn === targetColumn) {
@@ -243,20 +248,26 @@ const AssistantDashboard = () => {
       cancelled: "cancelled",
     };
     try {
-      const response = await updateAppointmentStatus(draggedPatient.id, statusByColumn[targetColumn]);
-      setAllAppointments((current) => current.map((appointment) => (
-        appointment._id === draggedPatient.id
-          ? { ...appointment, ...response.appointment }
-          : appointment
-      )));
+      const response = await updateAppointmentStatus(
+        draggedPatient.id,
+        statusByColumn[targetColumn],
+      );
+      setAllAppointments((current) =>
+        current.map((appointment) =>
+          appointment._id === draggedPatient.id
+            ? { ...appointment, ...response.appointment }
+            : appointment,
+        ),
+      );
       toast.success(
         `Patient moved to ${targetColumn
           .replace(/([A-Z])/g, " $1")
-          .toLowerCase()}`
-        , {
+          .toLowerCase()}`,
+        {
           duration: 3000,
           className: "doctor-toast",
-        });
+        },
+      );
     } catch (error) {
       toast.error(error.message || "Could not update appointment status");
       setDraggedPatient(null);
@@ -312,11 +323,11 @@ const AssistantDashboard = () => {
       }
     } catch (err) {
       console.error("Error sending notification:", err);
-      toast.error(err?.response?.data?.message || "Notification could not be sent");
+      toast.error(
+        err?.response?.data?.message || "Notification could not be sent",
+      );
     }
   };
-
-
 
   const PatientCard = ({ patient, columnType }) => (
     <div
@@ -354,12 +365,19 @@ const AssistantDashboard = () => {
     </div>
   );
 
-  const KanbanColumn = ({ title, patients, columnKey, icon: ColumnIcon, color }) => (
+  const KanbanColumn = ({
+    title,
+    patients,
+    columnKey,
+    icon: ColumnIcon,
+    color,
+  }) => (
     <div
-      className={`bg-gray-800/30 p-4 rounded-xl border transition-all duration-300 min-h-[600px] ${dragOverColumn === columnKey
-        ? "border-blue-500/70 bg-blue-500/10 shadow-lg shadow-blue-500/20"
-        : "border-gray-700/50"
-        }`}
+      className={`bg-gray-800/30 p-4 rounded-xl border transition-all duration-300 min-h-[600px] ${
+        dragOverColumn === columnKey
+          ? "border-blue-500/70 bg-blue-500/10 shadow-lg shadow-blue-500/20"
+          : "border-gray-700/50"
+      }`}
       onDragOver={handleDragOver}
       onDragEnter={(e) => handleDragEnter(e, columnKey)}
       onDragLeave={handleDragLeave}
@@ -378,7 +396,9 @@ const AssistantDashboard = () => {
         {patients.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-12 h-12 bg-gray-700/30 rounded-lg flex items-center justify-center mx-auto mb-2">
-              {React.createElement(ColumnIcon, { className: `w-6 h-6 ${color} opacity-50}` })}
+              {React.createElement(ColumnIcon, {
+                className: `w-6 h-6 ${color} opacity-50}`,
+              })}
             </div>
             <p className="text-gray-500 text-sm">
               No patients in {title.toLowerCase()}
@@ -468,7 +488,9 @@ const AssistantDashboard = () => {
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Today's Patients</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Today's Patients
+                </h2>
                 <div className="flex items-center space-x-2">
                   <Users className="w-5 h-5 text-blue-400" />
                   <span className="text-blue-400 font-medium">
@@ -488,8 +510,8 @@ const AssistantDashboard = () => {
                           prevAppointments.map((appointment) =>
                             appointment._id === appointmentId
                               ? { ...appointment, vitalUpdated: true }
-                              : appointment
-                          )
+                              : appointment,
+                          ),
                         );
                       }}
                     />
@@ -596,7 +618,8 @@ const AssistantDashboard = () => {
                             <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-md text-sm">
                               Already Updated
                             </span>
-                          ) : appointment?.status?.toLowerCase() === "completed" ? (
+                          ) : appointment?.status?.toLowerCase() ===
+                            "completed" ? (
                             <span className="bg-gray-500/20 text-gray-400 px-3 py-1 rounded-md text-sm">
                               Appointment Completed
                             </span>
@@ -630,26 +653,31 @@ const AssistantDashboard = () => {
                 userData={userData}
               />
             ) : (
-              <AssistantForm onSuccess={async (assistant) => {
-                if (assistant) {
-                  setAssistantData({ success: true, assistant });
-                  setToggle(true);
-                  return;
-                }
-
-                setLoading(true);
-                try {
-                  const profileResponse = await getAssistantProfile();
-                  if (profileResponse?.success) {
-                    setAssistantData(profileResponse);
+              <AssistantForm
+                onSuccess={async (assistant) => {
+                  if (assistant) {
+                    setAssistantData({ success: true, assistant });
                     setToggle(true);
+                    return;
                   }
-                } catch (err) {
-                  console.error('Unable to reload assistant profile after creation:', err);
-                } finally {
-                  setLoading(false);
-                }
-              }} />
+
+                  setLoading(true);
+                  try {
+                    const profileResponse = await getAssistantProfile();
+                    if (profileResponse?.success) {
+                      setAssistantData(profileResponse);
+                      setToggle(true);
+                    }
+                  } catch (err) {
+                    console.error(
+                      "Unable to reload assistant profile after creation:",
+                      err,
+                    );
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              />
             )}
           </div>
         );
@@ -722,11 +750,11 @@ const AssistantDashboard = () => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
-
       {/* Sidebar */}
       <div
-        className={`${toggleSideBar ? "w-64" : "w-20"
-          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+        className={`${
+          toggleSideBar ? "w-64" : "w-20"
+        } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
       >
         <div className="p-3 border-b border-gray-700/50">
           <div className="flex mt-0.5 items-center justify-between">
@@ -746,10 +774,9 @@ const AssistantDashboard = () => {
 
             <PanelLeft
               onClick={() => setToggleSideBar((prev) => !prev)}
-              className={`${toggleSideBar
-                ? ""
-                : "mt-[10px] mb-[11px] mr-[10px]"
-                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+              className={`${
+                toggleSideBar ? "" : "mt-[10px] mb-[11px] mr-[10px]"
+              } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
             />
           </div>
         </div>
@@ -761,26 +788,27 @@ const AssistantDashboard = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
-                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                  className={`w-full flex items-center ${
+                    toggleSideBar ? "space-x-3" : "justify-center"
+                  } cursor-pointer p-3 rounded-lg relative ${
+                    activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
                       : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                    }`}
+                  }`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
 
                   {toggleSideBar && (
-                    <span className="flex-1 text-left">
-                      {item.label}
-                    </span>
+                    <span className="flex-1 text-left">{item.label}</span>
                   )}
 
                   {activeTab === item.id && (
                     <span
-                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                 </button>
@@ -793,10 +821,9 @@ const AssistantDashboard = () => {
         <div className="p-4 border-t border-gray-700/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${toggleSideBar
-              ? "space-x-3 justify-start"
-              : "justify-center"
-              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+            className={`w-full flex items-center ${
+              toggleSideBar ? "space-x-3 justify-start" : "justify-center"
+            } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
             {toggleSideBar && <span>Logout</span>}
@@ -806,7 +833,6 @@ const AssistantDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
         {/* Header */}
         {activeTab === "home" && (
           <header className="sticky top-0 z-10 h-18 bg-gray-900/30 border-b border-gray-700/50 p-3 backdrop-blur-sm">
@@ -853,14 +879,10 @@ const AssistantDashboard = () => {
         )}
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderContent()}
-        </main>
-
+        <main className="flex-1 overflow-y-auto p-6">{renderContent()}</main>
       </div>
     </div>
   );
 };
 
 export default AssistantDashboard;
-

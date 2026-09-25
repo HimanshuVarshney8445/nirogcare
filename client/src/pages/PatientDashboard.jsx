@@ -6,10 +6,10 @@ import {
   getMyAppointment,
   getMyLabAppointment,
 } from "../services/patientServices";
+import { useAuth } from "../hooks/useAuth";
 import Notification from "../component/Notification";
 import HospitalAppointmentBooking from "../component/HospitalAppointmentBooking";
 import { LabAppointmentBooking } from "../component/LabsAppointmentBooking";
-import { logoutUser } from "../services/logoutService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getMedicalRecordsAPI } from "../services/medicalRecordServices";
@@ -55,6 +55,7 @@ import { requestFCMToken, onForegroundMessage } from "../utils/firebaseConfig";
 import { updateFcmTokenApi } from "../api/authServices";
 
 const PatientDashboard = () => {
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const { tab } = useParams();
@@ -133,8 +134,12 @@ const PatientDashboard = () => {
     initFCM();
 
     const unsubscribe = onForegroundMessage((payload) => {
-      const title = payload.notification?.title || payload.data?.title || "Notification";
-      const body = payload.notification?.body || payload.data?.body || "You have a new update.";
+      const title =
+        payload.notification?.title || payload.data?.title || "Notification";
+      const body =
+        payload.notification?.body ||
+        payload.data?.body ||
+        "You have a new update.";
       toast.info(`${title}: ${body}`, {
         duration: 5000,
       });
@@ -152,11 +157,7 @@ const PatientDashboard = () => {
       setLoading(true);
 
       try {
-        const [
-          userRes,
-          appointmentRes,
-          labAppointmentRes,
-        ] = await Promise.all([
+        const [userRes, appointmentRes, labAppointmentRes] = await Promise.all([
           getMe(),
           getMyAppointment(),
           getMyLabAppointment(),
@@ -169,23 +170,15 @@ const PatientDashboard = () => {
 
         // Doctor appointments
         if (appointmentRes) {
-          setAppointment(
-            appointmentRes?.appointments || []
-          );
+          setAppointment(appointmentRes?.appointments || []);
         }
 
         // Lab appointments
         if (labAppointmentRes) {
-          setLabAppointment(
-            labAppointmentRes || []
-          );
+          setLabAppointment(labAppointmentRes || []);
         }
-
       } catch (error) {
-        console.log(
-          "Error fetching dashboard data",
-          error
-        );
+        console.log("Error fetching dashboard data", error);
       } finally {
         setLoading(false);
       }
@@ -195,19 +188,17 @@ const PatientDashboard = () => {
   }, []);
 
   const handleLogout = async () => {
-    const response = await logoutUser();
-    if (response?.status === 200) {
-      toast.success("Logout successful!", {
-        duration: 3000,
-        className: "doctor-toast",
-      });
-      navigate("/auth");
-    }
+    await logout();
+
+    toast.success("Logout successful!", {
+      duration: 3000,
+      className: "doctor-toast",
+    });
+
+    navigate("/auth", { replace: true });
   };
 
   const getHospital = async () => {
-
-
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported.");
       return;
@@ -218,7 +209,10 @@ const PatientDashboard = () => {
         const { latitude, longitude } = position.coords;
 
         try {
-          const response = await getAllNearbyHospitals({ lat: latitude, lng: longitude });
+          const response = await getAllNearbyHospitals({
+            lat: latitude,
+            lng: longitude,
+          });
           if (response) {
             setHospitals(response.hospitals || []);
           }
@@ -229,12 +223,9 @@ const PatientDashboard = () => {
       (err) => {
         console.error(err);
         toast.error("Please allow location access.");
-
-      }
+      },
     );
   };
-
-
 
   useEffect(() => {
     if (activeTab === "appointment") {
@@ -264,8 +255,10 @@ const PatientDashboard = () => {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
 
-
-          const response = await getAllNearbyLabs({ lat: latitude, lng: longitude });
+          const response = await getAllNearbyLabs({
+            lat: latitude,
+            lng: longitude,
+          });
 
           if (response) {
             setLabs(response?.labs || []);
@@ -274,13 +267,12 @@ const PatientDashboard = () => {
         (error) => {
           console.error("Geolocation error:", error);
           toast.error("Location permission is required to find nearby labs.");
-        }
+        },
       );
     } catch (error) {
       console.error("Error in getLabs:", error);
     }
   };
-
 
   useEffect(() => {
     if (activeTab === "lab") {
@@ -288,50 +280,39 @@ const PatientDashboard = () => {
     }
   }, [activeTab]);
 
-
   const getLabReport = async () => {
     try {
       const response = await getAllLabReport();
       if (response) {
-        setLabReport(response.reports)
+        setLabReport(response.reports);
       }
-
     } catch (error) {
-      console.log("Error in fetching lab report", error)
-
+      console.log("Error in fetching lab report", error);
     }
-  }
-
+  };
 
   useEffect(() => {
-    if (activeTab === 'reports') {
+    if (activeTab === "reports") {
       getLabReport();
     }
-
-  }, [activeTab])
-
+  }, [activeTab]);
 
   const onlineAppointmentPatients = async () => {
     try {
       const response = await getOnlineApointments();
       if (response) {
-        setOnlineAppointment(response?.appointments)
+        setOnlineAppointment(response?.appointments);
       }
-
     } catch {
       toast.error("Failed to fetch online appointments");
-
     }
-
-  }
+  };
 
   useEffect(() => {
-    if (activeTab === 'live') {
+    if (activeTab === "live") {
       onlineAppointmentPatients();
     }
-
-  }, [activeTab])
-
+  }, [activeTab]);
 
   const navItems = [
     { id: "home", label: "Home", icon: Home },
@@ -346,7 +327,9 @@ const PatientDashboard = () => {
   ];
 
   const parseBloodPressure = (bloodPressure = "") => {
-    const [systolic, diastolic] = bloodPressure.split("/").map((part) => parseInt(part, 10));
+    const [systolic, diastolic] = bloodPressure
+      .split("/")
+      .map((part) => parseInt(part, 10));
     return {
       systolic: Number.isFinite(systolic) ? systolic : null,
       diastolic: Number.isFinite(diastolic) ? diastolic : null,
@@ -354,74 +337,150 @@ const PatientDashboard = () => {
   };
 
   const getVitalStatus = (type, value) => {
-    if (value === null || value === undefined || value === "") return { label: "unknown", color: "text-gray-400" };
+    if (value === null || value === undefined || value === "")
+      return { label: "unknown", color: "text-gray-400" };
 
     switch (type) {
       case "heartRate": {
         const heartRate = Number(value);
-        if (heartRate < 50 || heartRate > 110) return {
-          label: "risky", color: "text-red-400",
-          bg: "bg-red-500/20"
+        if (heartRate < 50 || heartRate > 110)
+          return {
+            label: "risky",
+            color: "text-red-400",
+            bg: "bg-red-500/20",
+          };
+        if (heartRate < 60 || heartRate > 100)
+          return {
+            label: "moderate",
+            color: "text-yellow-300",
+            bg: "bg-yellow-500/20",
+          };
+        return {
+          label: "normal",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/20",
         };
-        if (heartRate < 60 || heartRate > 100) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
-        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
       }
       case "temperature": {
         const temp = Number(value);
-        if (temp < 95 || temp > 103) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
-        if (temp < 97 || temp > 99.5) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
-        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
+        if (temp < 95 || temp > 103)
+          return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (temp < 97 || temp > 99.5)
+          return {
+            label: "moderate",
+            color: "text-yellow-300",
+            bg: "bg-yellow-500/20",
+          };
+        return {
+          label: "normal",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/20",
+        };
       }
       case "bloodPressure": {
         const { systolic, diastolic } = parseBloodPressure(value);
-        if (!systolic || !diastolic) return { label: "unknown", color: "text-gray-400", bg: "bg-gray-500/20" };
-        if (systolic >= 180 || diastolic >= 120) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
-        if (systolic >= 140 || diastolic >= 90) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
-        if (systolic < 90 || diastolic < 60) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
-        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
+        if (!systolic || !diastolic)
+          return {
+            label: "unknown",
+            color: "text-gray-400",
+            bg: "bg-gray-500/20",
+          };
+        if (systolic >= 180 || diastolic >= 120)
+          return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (systolic >= 140 || diastolic >= 90)
+          return {
+            label: "moderate",
+            color: "text-yellow-300",
+            bg: "bg-yellow-500/20",
+          };
+        if (systolic < 90 || diastolic < 60)
+          return {
+            label: "moderate",
+            color: "text-yellow-300",
+            bg: "bg-yellow-500/20",
+          };
+        return {
+          label: "normal",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/20",
+        };
       }
       case "oxygenLevel": {
         const oxygen = Number(value);
-        if (oxygen < 90) return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
-        if (oxygen < 95) return { label: "moderate", color: "text-yellow-300", bg: "bg-yellow-500/20" };
-        return { label: "normal", color: "text-emerald-400", bg: "bg-emerald-500/20" };
+        if (oxygen < 90)
+          return { label: "risky", color: "text-red-400", bg: "bg-red-500/20" };
+        if (oxygen < 95)
+          return {
+            label: "moderate",
+            color: "text-yellow-300",
+            bg: "bg-yellow-500/20",
+          };
+        return {
+          label: "normal",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/20",
+        };
       }
       default:
-        return { label: "unknown", color: "text-gray-400", bg: "bg-gray-500/20" };
+        return {
+          label: "unknown",
+          color: "text-gray-400",
+          bg: "bg-gray-500/20",
+        };
     }
   };
 
-  const heartRateStatus = getVitalStatus("heartRate", userData?.user?.heartRate);
-  const temperatureStatus = getVitalStatus("temperature", userData?.user?.temperature);
-  const bloodPressureStatus = getVitalStatus("bloodPressure", userData?.user?.bloodPressure);
-  const oxygenStatus = getVitalStatus("oxygenLevel", userData?.user?.oxygenLevel);
+  const heartRateStatus = getVitalStatus(
+    "heartRate",
+    userData?.user?.heartRate,
+  );
+  const temperatureStatus = getVitalStatus(
+    "temperature",
+    userData?.user?.temperature,
+  );
+  const bloodPressureStatus = getVitalStatus(
+    "bloodPressure",
+    userData?.user?.bloodPressure,
+  );
+  const oxygenStatus = getVitalStatus(
+    "oxygenLevel",
+    userData?.user?.oxygenLevel,
+  );
 
   const vitalStats = [
     {
       icon: Heart,
       label: "Heart Rate",
-      value: userData?.user?.heartRate ? `${userData.user.heartRate} bpm` : "72 bpm",
+      value: userData?.user?.heartRate
+        ? `${userData.user.heartRate} bpm`
+        : "72 bpm",
       status: heartRateStatus.label,
       color: heartRateStatus.color,
     },
     {
       icon: Thermometer,
       label: "Temperature",
-      value: userData?.user?.temperature ? `${userData.user.temperature} °F` : "98.6 °F",
+      value: userData?.user?.temperature
+        ? `${userData.user.temperature} °F`
+        : "98.6 °F",
       status: temperatureStatus.label,
       color: temperatureStatus.color,
     },
     {
       icon: Weight,
       label: "Blood Pressure",
-      value: userData?.user?.bloodPressure ? `${userData.user.bloodPressure} mmHg` : "120/80 mmHg",
+      value: userData?.user?.bloodPressure
+        ? `${userData.user.bloodPressure} mmHg`
+        : "120/80 mmHg",
       status: bloodPressureStatus.label,
       color: bloodPressureStatus.color,
     },
     {
       icon: Activity,
       label: "Oxygen Level",
-      value: userData?.user?.oxygenLevel ? `${userData.user.oxygenLevel}%` : "98%",
+      value: userData?.user?.oxygenLevel
+        ? `${userData.user.oxygenLevel}%`
+        : "98%",
       status: oxygenStatus.label,
       color: oxygenStatus.color,
     },
@@ -456,8 +515,6 @@ const PatientDashboard = () => {
     );
   });
 
-
-
   const renderContent = () => {
     switch (activeTab) {
       case "home":
@@ -483,14 +540,15 @@ const PatientDashboard = () => {
                   <div className="flex items-center justify-between mb-2">
                     <stat.icon className={`w-8 h-8 ${stat.color}`} />
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${stat.status === "risky"
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        stat.status === "risky"
                           ? "text-red-400 bg-red-400/20"
                           : stat.status === "moderate"
                             ? "text-yellow-300 bg-yellow-300/20"
                             : stat.status === "normal"
                               ? "text-emerald-400 bg-emerald-400/20"
                               : "text-gray-400 bg-gray-400/20"
-                        }`}
+                      }`}
                     >
                       {stat.status}
                     </span>
@@ -521,7 +579,9 @@ const PatientDashboard = () => {
               </div>
               <div className="space-y-3">
                 {upcomingAppointments.length === 0 ? (
-                  <p className="text-slate-400 text-sm">No upcoming appointments.</p>
+                  <p className="text-slate-400 text-sm">
+                    No upcoming appointments.
+                  </p>
                 ) : (
                   upcomingAppointments.map((appt, index) => (
                     <div
@@ -539,7 +599,8 @@ const PatientDashboard = () => {
                           <div className="flex items-center gap-2 mb-1">
                             <Stethoscope className="w-4 h-4 text-pink-800" />
                             <p className="text-slate-300 text-sm">
-                              {appt?.doctorId?.specialization || "Specialization"}
+                              {appt?.doctorId?.specialization ||
+                                "Specialization"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -563,13 +624,13 @@ const PatientDashboard = () => {
                             <p className="text-blue-400 font-medium">
                               {appt.date
                                 ? new Date(appt.date).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "short",
-                                    month: "short",
-                                    day: "numeric",
-                                  }
-                                )
+                                    "en-US",
+                                    {
+                                      weekday: "short",
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )
                                 : "Date"}
                             </p>
                           </div>
@@ -605,7 +666,9 @@ const PatientDashboard = () => {
               </div>
               <div className="space-y-3">
                 {upcomingLabAppointments.length === 0 ? (
-                  <p className="text-slate-400 text-sm">No upcoming lab appointments.</p>
+                  <p className="text-slate-400 text-sm">
+                    No upcoming lab appointments.
+                  </p>
                 ) : (
                   upcomingLabAppointments.map((appointment) => (
                     <div
@@ -617,13 +680,15 @@ const PatientDashboard = () => {
                           <div className="flex items-center gap-2 mb-1">
                             <FlaskConical className="w-4 h-4 text-emerald-400" />
                             <h4 className="font-medium text-slate-100">
-                              {appointment?.testDetails?.testName || "Test Name"}
+                              {appointment?.testDetails?.testName ||
+                                "Test Name"}
                             </h4>
                           </div>
                           <div className="flex items-center gap-2 mb-1">
                             <Activity className="w-4 h-4 text-purple-400" />
                             <p className="text-slate-300 text-sm">
-                              {appointment?.testDetails?.testType || "Test Type"}
+                              {appointment?.testDetails?.testType ||
+                                "Test Type"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 mb-1">
@@ -653,12 +718,12 @@ const PatientDashboard = () => {
                             <p className="text-blue-400 font-medium">
                               {appointment.scheduledDate
                                 ? new Date(
-                                  appointment.scheduledDate
-                                ).toLocaleDateString("en-US", {
-                                  weekday: "short",
-                                  month: "short",
-                                  day: "numeric",
-                                })
+                                    appointment.scheduledDate,
+                                  ).toLocaleDateString("en-US", {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                  })
                                 : "Date"}
                             </p>
                           </div>
@@ -670,14 +735,15 @@ const PatientDashboard = () => {
                           </div>
                           <div className="flex justify-end">
                             <span
-                              className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Completed"
-                                ? "bg-green-400/20 text-green-400"
-                                : appointment.status === "Pending"
-                                  ? "bg-yellow-400/20 text-yellow-400"
-                                  : appointment.status === "Cancelled"
-                                    ? "bg-red-400/20 text-red-400"
-                                    : "bg-blue-400/20 text-blue-400"
-                                }`}
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                appointment.status === "Completed"
+                                  ? "bg-green-400/20 text-green-400"
+                                  : appointment.status === "Pending"
+                                    ? "bg-yellow-400/20 text-yellow-400"
+                                    : appointment.status === "Cancelled"
+                                      ? "bg-red-400/20 text-red-400"
+                                      : "bg-blue-400/20 text-blue-400"
+                              }`}
                             >
                               {appointment.status}
                             </span>
@@ -732,8 +798,10 @@ const PatientDashboard = () => {
       case "live":
         return (
           <div className="space-y-6">
-            <LiveComponentPatient onlineAppointment={onlineAppointment} name={userData?.user?.name} />
-
+            <LiveComponentPatient
+              onlineAppointment={onlineAppointment}
+              name={userData?.user?.name}
+            />
           </div>
         );
       case "notifications":
@@ -743,9 +811,7 @@ const PatientDashboard = () => {
           </div>
         );
       case "ai":
-        return (
-          <ChatBot userData={userData} />
-        );
+        return <ChatBot userData={userData} />;
       default:
         return null;
     }
@@ -757,8 +823,9 @@ const PatientDashboard = () => {
     <div className="h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`${toggleSideBar ? "w-64" : "w-20"
-          } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
+        className={`${
+          toggleSideBar ? "w-64" : "w-20"
+        } h-screen overflow-y-auto transition-all duration-300 ease-in-out bg-gray-900/50 border-r border-gray-700/50 flex flex-col backdrop-blur-sm`}
       >
         <div className="p-3 border-b border-gray-700/50">
           <div className="flex mt-0.5 items-center justify-between">
@@ -776,8 +843,9 @@ const PatientDashboard = () => {
             </div>
             <PanelLeft
               onClick={() => setToggleSideBar((prev) => !prev)}
-              className={`${toggleSideBar ? "" : "mt-[10px] mb-[11px] mr-[10px]"
-                } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
+              className={`${
+                toggleSideBar ? "" : "mt-[10px] mb-[11px] mr-[10px]"
+              } text-emerald-700 hover:text-emerald-500 cursor-pointer transition duration-300`}
             />
           </div>
         </div>
@@ -789,11 +857,13 @@ const PatientDashboard = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center ${toggleSideBar ? "space-x-3" : "justify-center"
-                    } cursor-pointer p-3 rounded-lg relative ${activeTab === item.id
+                  className={`w-full flex items-center ${
+                    toggleSideBar ? "space-x-3" : "justify-center"
+                  } cursor-pointer p-3 rounded-lg relative ${
+                    activeTab === item.id
                       ? "bg-gradient-to-r from-green-500/20 to-blue-500/20 text-white border border-green-500/50"
                       : "text-gray-300 hover:text-white hover:bg-gray-800/50"
-                    }`}
+                  }`}
                 >
                   {item.id !== "ai" && (
                     <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -808,18 +878,20 @@ const PatientDashboard = () => {
                   )}
                   {activeTab === item.id && item.id !== "ai" && (
                     <span
-                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-cyan-300 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                   {activeTab === item.id && item.id === "ai" && (
                     <span
-                      className={`w-1.5 h-1.5 bg-emerald-500 rounded-full ${toggleSideBar
-                        ? "ml-auto"
-                        : "absolute right-1.5 bottom-1.5"
-                        }`}
+                      className={`w-1.5 h-1.5 bg-emerald-500 rounded-full ${
+                        toggleSideBar
+                          ? "ml-auto"
+                          : "absolute right-1.5 bottom-1.5"
+                      }`}
                     ></span>
                   )}
                 </button>
@@ -832,8 +904,9 @@ const PatientDashboard = () => {
         <div className="p-4 border-t border-gray-700/50">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${toggleSideBar ? "space-x-3 justify-start" : "justify-center"
-              } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
+            className={`w-full flex items-center ${
+              toggleSideBar ? "space-x-3 justify-start" : "justify-center"
+            } p-3 rounded-lg text-gray-300 hover:bg-red-600 cursor-pointer hover:text-white transition-all duration-300`}
           >
             <LogOut className="w-5 h-5" />
             {toggleSideBar && <span>Logout</span>}
@@ -863,7 +936,6 @@ const PatientDashboard = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-4">
-
                 <button
                   onClick={() => handleTabChange("notifications")}
                   className="relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -894,16 +966,10 @@ const PatientDashboard = () => {
         )}
 
         {/* Scrollable content */}
-        <main
-          className={`flex-1 overflow-y-auto p-6`}
-        >
-          {renderContent()}
-        </main>
-
+        <main className={`flex-1 overflow-y-auto p-6`}>{renderContent()}</main>
       </div>
     </div>
   );
-
 };
 
 export default PatientDashboard;

@@ -8,7 +8,7 @@ import {
   getAllLabAppointmentbyLab,
 } from "../services/labServices";
 
-import { logoutUser } from "../services/logoutService";
+import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner";
 
 import {
@@ -73,6 +73,7 @@ const PatientSkeleton = () => (
 );
 
 const LabDashboard = () => {
+  const { logout } = useAuth();
   const { tab } = useParams();
   const navigate = useNavigate();
 
@@ -201,19 +202,16 @@ const LabDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await logoutUser();
+      await logout();
 
-      if (response?.status === 200) {
-        toast.success("Logout successful!", {
-          duration: 3000,
-          className: "doctor-toast",
-        });
+      toast.success("Logout successful!", {
+        duration: 3000,
+        className: "doctor-toast",
+      });
 
-        navigate("/auth");
-      }
+      navigate("/auth", { replace: true });
     } catch (error) {
       toast.error("Logout failed");
-
       console.error("Logout error:", error);
     }
   };
