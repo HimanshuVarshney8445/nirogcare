@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, CheckCircle, XCircle, Phone, Mail, Search } from 'lucide-react';
 
-const AllAssistants = ({ data }) => {
+const AllAssistants = ({ data, onVerificationChange }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   if (!data || !Array.isArray(data)) {
@@ -55,7 +55,9 @@ const AllAssistants = ({ data }) => {
         ) : (
           <div className="grid gap-6">
             {filteredData.map((assistant, index) => (
-              <div key={assistant._id || index} className="bg-gray-950 rounded-lg shadow-xl p-6 border border-gray-700">
+              (() => {
+                const approvalStatus = assistant.approvalStatus || (assistant.isVerified ? 'approved' : 'pending');
+                return <div key={assistant._id || index} className="bg-gray-950 rounded-lg shadow-xl p-6 border border-gray-700">
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Assistant Info */}
                   <div className="space-y-4">
@@ -70,8 +72,8 @@ const AllAssistants = ({ data }) => {
                         ) : (
                           <XCircle className="h-5 w-5 text-red-500" />
                         )}
-                        <span className={`text-sm font-medium ${assistant.isVerified ? 'text-green-600' : 'text-red-600'}`}>
-                          {assistant.isVerified ? 'Verified' : 'Not Verified'}
+                        <span className={`text-sm font-medium ${approvalStatus === 'approved' ? 'text-green-600' : approvalStatus === 'rejected' ? 'text-red-600' : 'text-yellow-400'}`}>
+                          {approvalStatus === 'approved' ? 'Approved' : approvalStatus === 'rejected' ? 'Rejected' : 'Pending'}
                         </span>
                       </div>
                     </div>
@@ -126,6 +128,13 @@ const AllAssistants = ({ data }) => {
                   </div>
                 </div>
 
+                {approvalStatus !== 'approved' && (
+                  <div className="flex gap-3 mt-6">
+                    <button onClick={() => onVerificationChange(assistant._id, 'approved')} className="flex-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 py-2 rounded-lg">Approve Assistant</button>
+                    {approvalStatus !== 'rejected' && <button onClick={() => onVerificationChange(assistant._id, 'rejected')} className="flex-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 py-2 rounded-lg">Reject Assistant</button>}
+                  </div>
+                )}
+
                 {/* Hospital ID */}
                 <div className="mt-6 pt-6 border-t border-gray-600">
                   <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -135,7 +144,8 @@ const AllAssistants = ({ data }) => {
                     </span>
                   </div>
                 </div>
-              </div>
+                </div>;
+              })()
             ))}
           </div>
         )}

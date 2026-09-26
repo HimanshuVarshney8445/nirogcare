@@ -5,6 +5,7 @@ import {
   getPatientStats,
   getAllHospitalPatients,
   getAllAssistantsForHospital,
+  updateAssistantVerification,
   getAllHospitals,
   addPatientToDoctor,
 } from "../controllers/hospital.controller.js";
@@ -31,6 +32,7 @@ router.get("/stats", getPatientStats);
 router.get("/patients", getAllHospitalPatients);
 
 router.get('/all-assistants', getAllAssistantsForHospital);
+router.patch('/assistants/:assistantId', updateAssistantVerification);
 
 router.post('/add-patient', addPatientToDoctor);
 

@@ -3,10 +3,13 @@ import { User, Building2, UserPlus, CheckCircle, AlertCircle, Stethoscope, Save 
 import { updateAssistantProfile } from '../services/assistantServices';
 import { toast } from 'sonner';
 
-const AssistantForm = ({ onSuccess }) => {
+const AssistantForm = ({ onSuccess, isProfileCompletion = false, assistant }) => {
   const [formData, setFormData] = useState({
     doctorLicense: '',
-    hospitalLicense: ''
+    hospitalLicense: '',
+    gender: assistant?.gender || '',
+    experience: assistant?.experience ?? '',
+    education: assistant?.education || '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -55,7 +58,9 @@ const AssistantForm = ({ onSuccess }) => {
     }
   };
 
-  const isFormValid = formData.doctorLicense.trim() && formData.hospitalLicense.trim();
+  const isFormValid = isProfileCompletion
+    ? formData.gender && formData.experience !== '' && formData.education.trim()
+    : formData.doctorLicense.trim() && formData.hospitalLicense.trim();
 
   return (
     <div className=" flex items-center justify-center   ">
@@ -68,10 +73,12 @@ const AssistantForm = ({ onSuccess }) => {
             <div className="flex justify-center items-center gap-2 mb-1">
               <UserPlus className="w-8 h-8 text-blue-400" />
               <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-green-300 bg-clip-text text-transparent">
-                Create Assistant
+                {isProfileCompletion ? 'Complete Assistant Profile' : 'Create Assistant'}
               </h2>
             </div>
-            <p className="text-gray-400 mt-2">Register a new assistant in the system</p>
+            <p className="text-gray-400 mt-2">
+              {isProfileCompletion ? 'Add your professional details to continue' : 'Register a new assistant in the system'}
+            </p>
           </div>
 
           {/* Message Display */}
@@ -94,8 +101,7 @@ const AssistantForm = ({ onSuccess }) => {
           <div className="space-y-6">
             
 
-            {/* Doctor ID Field */}
-            <div className="group  mb-10">
+            {!isProfileCompletion && <div className="group mb-10">
               <label className="mb-4 flex items-center text-sm font-medium text-gray-300  group-hover:text-green-400 transition-colors">
                 <Stethoscope className="w-4 h-4 mr-2 text-green-400" />
                 Doctor License Number
@@ -112,10 +118,9 @@ const AssistantForm = ({ onSuccess }) => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
-            </div>
+            </div>}
 
-            {/* Hospital ID Field */}
-            <div className="group">
+            {!isProfileCompletion && <div className="group">
               <label className="flex items-center text-sm font-medium text-gray-300 mb-4 group-hover:text-green-400 transition-colors">
                 <Building2 className="w-4 h-4 mr-2 text-green-400" />
                 Hospital License Number
@@ -132,7 +137,27 @@ const AssistantForm = ({ onSuccess }) => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-transparent rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
-            </div>
+            </div>}
+
+            {isProfileCompletion && <>
+              <div className="group">
+                <label className="flex items-center text-sm font-medium text-gray-300 mb-4">Gender</label>
+                <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white" required>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="group">
+                <label className="flex items-center text-sm font-medium text-gray-300 mb-4">Experience (Years)</label>
+                <input type="number" min="0" max="60" name="experience" value={formData.experience} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white" required />
+              </div>
+              <div className="group">
+                <label className="flex items-center text-sm font-medium text-gray-300 mb-4">Education</label>
+                <input type="text" name="education" value={formData.education} onChange={handleInputChange} className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white" required />
+              </div>
+            </>}
 
             {/* Submit Button */}
             <button
@@ -147,12 +172,12 @@ const AssistantForm = ({ onSuccess }) => {
               {isSubmitting ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400 mr-3"></div>
-                  Creating Assistant...
+                  {isProfileCompletion ? 'Saving Profile...' : 'Creating Assistant...'}
                 </div>
               ) : (
                 <>
                   <Save className="w-5 h-5 mr-3" />
-                  Create Assistant
+                  {isProfileCompletion ? 'Save Profile' : 'Create Assistant'}
                 </>
               )}
             </button>
@@ -162,7 +187,7 @@ const AssistantForm = ({ onSuccess }) => {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-gray-500 text-sm">
-            Assistant will be created with verification status set to false by default
+            {isProfileCompletion ? 'Your profile will be available after it is saved.' : 'Your hospital must approve the assistant before profile completion.'}
           </p>
         </div>
       </div>

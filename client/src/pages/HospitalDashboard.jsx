@@ -30,7 +30,7 @@ import {
 import { getPatientsByHospital } from "../services/hospitalsServices";
 import DrPatientsListByHospital from "../component/DrPatientsListByHospital";
 import { getAllHospitalPatients } from "../services/hospitalsServices";
-import { getAllAssistantsForHospital } from "../services/hospitalsServices";
+import { getAllAssistantsForHospital, updateAssistantVerification } from "../services/hospitalsServices";
 import AllAssistants from "../component/AllAssistants";
 import AddPatientModal from "../component/AddPatientModal";
 
@@ -187,6 +187,16 @@ const HospitalDashboard = () => {
       }
     } catch (error) {
       console.log("Error in fetching all assistants", error);
+    }
+  };
+
+  const handleAssistantVerification = async (assistantId, status) => {
+    try {
+      await updateAssistantVerification(assistantId, status);
+      toast.success(status === "approved" ? "Assistant approved successfully" : "Assistant rejected");
+      fetchAllAssistants();
+    } catch (error) {
+      toast.error("Failed to update assistant request");
     }
   };
 
@@ -629,7 +639,7 @@ const HospitalDashboard = () => {
       case "assistants":
         return (
           <div className="space-y-6">
-            <AllAssistants data={allAssistants} />
+            <AllAssistants data={allAssistants} onVerificationChange={handleAssistantVerification} />
           </div>
         );
       default:

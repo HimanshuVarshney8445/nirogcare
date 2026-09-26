@@ -35,6 +35,11 @@ export async function getAllAssistantsForHospital() {
   return response.data;
 }
 
+export async function updateAssistantVerification(assistantId, status) {
+  const response = await api.patch(`/api/hospital/assistants/${assistantId}`, { status });
+  return response.data;
+}
+
 export async function addPatientToDoctor(data) {
   const response = await api.post("/api/hospital/add-patient", data);
   return response.data;

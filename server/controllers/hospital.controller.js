@@ -402,6 +402,39 @@ export const getAllAssistantsForHospital = async (req, res) => {
   }
 };
 
+export const updateAssistantVerification = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Assistant status must be approved or rejected",
+      });
+    }
+
+    const hospital = await Hospital.findOne({ userId: req.user.id });
+    if (!hospital) {
+      return res.status(404).json({ success: false, message: "Hospital not found" });
+    }
+
+    const assistant = await Assistant.findOne({
+      _id: req.params.assistantId,
+      hospitalId: hospital._id,
+    });
+    if (!assistant) {
+      return res.status(404).json({ success: false, message: "Assistant not found" });
+    }
+
+    assistant.approvalStatus = status;
+    assistant.isVerified = status === "approved";
+    await assistant.save();
+    return res.status(200).json({ success: true, assistant });
+  } catch (error) {
+    console.error("Error updating assistant verification:", error);
+    return res.status(500).json({ success: false, message: "Unable to update assistant approval" });
+  }
+};
+
 
 export const getAllHospitals = async (req, res) => {
   try {

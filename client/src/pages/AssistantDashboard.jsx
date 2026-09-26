@@ -418,6 +418,25 @@ const AssistantDashboard = () => {
   );
 
   const renderContent = () => {
+    const assistant = assistantData?.assistant;
+    const approvalStatus = assistant?.approvalStatus || (assistant?.isVerified ? "approved" : "pending");
+
+    if (assistant && approvalStatus !== "approved") {
+      return (
+        <div className="max-w-2xl mx-auto mt-12 bg-gray-800/50 rounded-2xl border border-yellow-500/30 p-8 text-center">
+          <Clock className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">
+            {approvalStatus === "rejected" ? "Request Rejected" : "Approval Pending"}
+          </h2>
+          <p className="text-gray-400">
+            {approvalStatus === "rejected"
+              ? "Your hospital administrator rejected your assistant request."
+              : "Your hospital administrator must approve your assistant request before you can access the dashboard."}
+          </p>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "home":
         return (
@@ -654,6 +673,8 @@ const AssistantDashboard = () => {
               />
             ) : (
               <AssistantForm
+                isProfileCompletion={Boolean(assistantData?.assistant)}
+                assistant={assistantData?.assistant}
                 onSuccess={async (assistant) => {
                   if (assistant) {
                     setAssistantData({ success: true, assistant });
