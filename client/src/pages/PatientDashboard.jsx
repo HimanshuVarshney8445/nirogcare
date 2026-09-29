@@ -94,7 +94,7 @@ const PatientDashboard = () => {
     const handleRefresh = () => fetchUnreadCount();
     window.addEventListener("refreshNotifications", handleRefresh);
 
-    const interval = setInterval(fetchUnreadCount, 12000);
+    const interval = setInterval(fetchUnreadCount, 30000);
 
     return () => {
       window.removeEventListener("refreshNotifications", handleRefresh);

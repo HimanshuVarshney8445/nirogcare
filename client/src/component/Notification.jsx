@@ -34,7 +34,7 @@ const Notification = () => {
 
         const interval = setInterval(() => {
             fetchNotifications();
-        }, 10000);
+        }, 30000);
 
         return () => {
             window.removeEventListener("refreshNotifications", handleRefresh);
@@ -149,4 +149,4 @@ const Notification = () => {
     );
 };
 
-export default Notification;
+export default Notification;

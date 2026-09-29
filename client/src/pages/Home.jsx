@@ -304,7 +304,9 @@ const HealthcareLandingPage = () => {
               </span>
             </button>
 
-            <button className="group flex items-center cursor-pointer px-8 py-4 rounded-2xl font-semibold text-lg border-2 border-gray-600 hover:border-emerald-400/50 transition-all duration-300 hover:bg-emerald-500/5 backdrop-blur-sm">
+            <button 
+              onClick={() => alert("Demo coming soon!")}
+              className="group flex items-center cursor-pointer px-8 py-4 rounded-2xl font-semibold text-lg border-2 border-gray-600 hover:border-emerald-400/50 transition-all duration-300 hover:bg-emerald-500/5 backdrop-blur-sm">
               <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
               Watch Demo
             </button>

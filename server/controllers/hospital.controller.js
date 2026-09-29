@@ -149,15 +149,11 @@ export const getPatientStats = async (req, res) => {
       // isVerified: true,
     }).populate({
       path: "userId",
-      select: "name",
+      select: "name email phone",
     });
 
     const doctorIds = doctors.map((doctor) => doctor._id);
 
-    /*
-      If there are no approved doctors, don't make
-      an unnecessary appointment query.
-    */
     let appointments = [];
 
     if (doctorIds.length > 0) {
@@ -165,63 +161,118 @@ export const getPatientStats = async (req, res) => {
         doctorId: {
           $in: doctorIds,
         },
-      }).populate({
-        path: "patientId",
-        populate: {
-          path: "userId",
-          select: "name phone",
-        },
-      });
+      })
+        .populate({
+          path: "patientId",
+          populate: {
+            path: "userId",
+            select: "name phone email",
+          },
+        })
+        .sort({ date: -1 });
     }
 
-    // Mapping doctor -> patients
-    const doctorPatientsMap = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Mapping doctor -> patients, appointments & stats
+    const doctorDataMap = {};
 
     for (const doctor of doctors) {
-      doctorPatientsMap[doctor._id.toString()] = {
+      doctorDataMap[doctor._id.toString()] = {
         doctorId: doctor._id,
         doctorName: doctor.userId?.name || "Unknown Doctor",
-        specialization: doctor.specialization,
+        specialization: doctor.specialization || "General Doctor",
+        email: doctor.userId?.email || "",
+        phone: doctor.userId?.phone || "",
+        licenseNumber: doctor.licenseNumber || "",
         patients: [],
+        appointments: [],
+        stats: {
+          totalPatients: 0,
+          todaysPatients: 0,
+          completed: 0,
+          pending: 0,
+        },
       };
     }
 
-    // Group patients under their doctors
+    // Group appointments & patients under their doctors
     for (const appointment of appointments) {
       const doctorId = appointment.doctorId?.toString();
 
-      const patient = appointment.patientId;
+      if (doctorId && doctorDataMap[doctorId]) {
+        const doctorObj = doctorDataMap[doctorId];
+        const patient = appointment.patientId;
+        const patientUser = patient?.userId;
 
-      if (
-        patient &&
-        patient.userId &&
-        doctorPatientsMap[doctorId]
-      ) {
-        const patientUser = patient.userId;
+        const apptDate = new Date(appointment.date);
+        const apptDateZero = new Date(apptDate);
+        apptDateZero.setHours(0, 0, 0, 0);
+
+        const isToday = apptDateZero.getTime() === today.getTime();
+        const statusStr = (appointment.status || "booked").toLowerCase();
+        const isCompleted = statusStr === "completed";
+        const isPending =
+          statusStr === "booked" ||
+          statusStr === "confirmed" ||
+          statusStr === "in-progress";
+
+        // Formatted appointment object
+        const formattedAppt = {
+          _id: appointment._id,
+          patientId: patient?._id,
+          userId: patientUser?._id,
+          name: patientUser?.name || "Walk-in Patient",
+          phone: appointment.contact || patientUser?.phone || "N/A",
+          age: appointment.age,
+          gender: appointment.gender,
+          date: appointment.date,
+          timeSlot: appointment.timeSlot,
+          mode: appointment.mode,
+          status: appointment.status,
+        };
+
+        doctorObj.appointments.push(formattedAppt);
+
+        // Stats calculation
+        if (isToday) {
+          doctorObj.stats.todaysPatients += 1;
+        }
+        if (isCompleted) {
+          doctorObj.stats.completed += 1;
+        }
+        if (isPending) {
+          doctorObj.stats.pending += 1;
+        }
 
         // Avoid duplicate patients for same doctor
-        const alreadyAdded =
-          doctorPatientsMap[doctorId].patients.some(
-            (p) =>
-              p._id.toString() === patient._id.toString()
+        if (patient && patientUser) {
+          const alreadyAdded = doctorObj.patients.some(
+            (p) => p._id.toString() === patient._id.toString()
           );
 
-        if (!alreadyAdded) {
-          doctorPatientsMap[doctorId].patients.push({
-            _id: patient._id,
-            userId: patientUser._id,
-            name: patientUser.name,
-            phone: patientUser.phone,
-            age: appointment.age,
-            gender: appointment.gender,
-            address: undefined,
-          });
+          if (!alreadyAdded) {
+            doctorObj.patients.push({
+              _id: patient._id,
+              userId: patientUser._id,
+              name: patientUser.name,
+              phone: appointment.contact || patientUser.phone,
+              age: appointment.age,
+              gender: appointment.gender,
+            });
+          }
         }
       }
     }
 
-    const doctorsWithPatients =
-      Object.values(doctorPatientsMap);
+    // Set totalPatients count to equal completed count
+    for (const docId in doctorDataMap) {
+      doctorDataMap[docId].stats.totalPatients =
+        doctorDataMap[docId].stats.completed;
+    }
+
+    const doctorsWithPatients = Object.values(doctorDataMap);
 
     res.status(200).json({
       totalDoctors: doctorsWithPatients.length,

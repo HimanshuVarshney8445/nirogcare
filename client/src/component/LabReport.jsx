@@ -13,9 +13,7 @@ const LabReportComponent = ({ labReports = [] }) => {
 
 
   useEffect(() => {
-    if (labReports.length > 0) {
-      setLoading(false);
-    }
+    setLoading(false);
   }, [labReports]);
 
   const handleDownload = async (url) => {
