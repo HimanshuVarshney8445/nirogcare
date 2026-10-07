@@ -10,10 +10,12 @@ import {
   Activity,
   ChevronRight,
   Star,
+  Video,
   CheckCircle,
   ArrowRight,
   Play,
   Zap,
+  Bell,
   Award,
   TrendingUp,
   Menu,
@@ -37,9 +39,7 @@ const HealthcareLandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const navigate = useNavigate()
-
-
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
@@ -60,27 +60,17 @@ const HealthcareLandingPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGetStarted = () => {
-    navigate("/auth")
-
+    navigate("/auth");
   };
 
-
   const features = [
-    {
-      icon: Calendar,
-      title: "Smart Appointment Booking",
-      description:
-        "AI-powered scheduling that finds the perfect time for you and your doctor",
-      color: "from-blue-500 to-cyan-500",
-      stats: "99% Success Rate",
-    },
-    {
-      icon: Clock,
-      title: "Real-time Queue Management",
-      description: "Live updates on wait times with smart notifications",
-      color: "from-amber-500 to-orange-500",
-      stats: "70% Less Wait Time",
-    },
+    // {
+    //   icon: Clock,
+    //   title: "Real-time Queue Management",
+    //   description: "Live updates on wait times with smart notifications",
+    //   color: "from-amber-500 to-orange-500",
+    //   stats: "70% Less Wait Time",
+    // },
     {
       icon: TestTube,
       title: "Instant Lab Results",
@@ -95,19 +85,43 @@ const HealthcareLandingPage = () => {
       color: "from-red-500 to-rose-500",
       stats: "100% Secure",
     },
-    {
-      icon: Activity,
-      title: "AI Health Monitoring",
-      description: "Predictive health analytics powered by machine learning",
-      color: "from-emerald-500 to-teal-500",
-      stats: "95% Accuracy",
-    },
+    // {
+    //   icon: Activity,
+    //   title: "AI Health Monitoring",
+    //   description: "Predictive health analytics powered by machine learning",
+    //   color: "from-emerald-500 to-teal-500",
+    //   stats: "95% Accuracy",
+    // },
     {
       icon: BotIcon,
       title: "AI Assistant",
       description: "Your personal health assistant for 24/7 support",
       color: "from-violet-500 to-purple-500",
       stats: "99% Response Rate",
+    },
+    {
+      icon: Bell,
+      title: "Smart Notifications",
+      description:
+        "Instant alerts for appointments, reminders, and health updates",
+      color: "from-emerald-500 to-teal-500",
+      stats: "Real-Time Alerts",
+    },
+    {
+      icon: MapPin,
+      title: "Nearby Hospitals",
+      description:
+        "Discover hospitals near you with distance, available services, and quick directions",
+      color: "from-red-500 to-orange-500",
+      stats: "Location-Based",
+    },
+    {
+      icon: Video,
+      title: "Video Consultation",
+      description:
+        "Connect with doctors through secure online video appointments",
+      color: "from-blue-500 to-indigo-500",
+      stats: "Online Appointments",
     },
   ];
 
@@ -148,7 +162,12 @@ const HealthcareLandingPage = () => {
   const footerLinks = {
     Platform: ["Features", "Pricing", "How It Works", "Book Appointment"],
     Company: ["About Us", "Careers", "Press", "Blog"],
-    Support: ["Help Center", "Contact Us", "Privacy Policy", "Terms of Service"],
+    Support: [
+      "Help Center",
+      "Contact Us",
+      "Privacy Policy",
+      "Terms of Service",
+    ],
   };
 
   const socialLinks = [
@@ -157,8 +176,6 @@ const HealthcareLandingPage = () => {
     { icon: Instagram, href: "#", label: "Instagram" },
     { icon: Linkedin, href: "#", label: "LinkedIn" },
   ];
-
-
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white min-h-screen overflow-x-hidden">
@@ -182,10 +199,7 @@ const HealthcareLandingPage = () => {
   backdrop-blur-2xl
   border border-white/10
   shadow-[0_8px_32px_rgba(0,0,0,0.25)]
-  ${scrolled
-            ? "bg-black/55 border-white/15"
-            : "bg-white/5"
-          }`}
+  ${scrolled ? "bg-black/55 border-white/15" : "bg-white/5"}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -238,10 +252,11 @@ const HealthcareLandingPage = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`md:hidden transition-all duration-300 ${mobileMenuOpen
-            ? "max-h-64 opacity-100"
-            : "max-h-0 opacity-0 overflow-hidden"
-            }`}
+          className={`md:hidden transition-all duration-300 ${
+            mobileMenuOpen
+              ? "max-h-64 opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
+          }`}
         >
           <div className="bg-black/95 backdrop-blur-md border-t border-gray-800/50 px-4 py-4 space-y-2">
             {["Features", "About", "Reviews", "Contact"].map((item) => (
@@ -265,10 +280,14 @@ const HealthcareLandingPage = () => {
       </nav>
 
       {/* Enhanced Hero Section */}
-      <section id="about" className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-30">
+      <section
+        id="about"
+        className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-30"
+      >
         <div
-          className={`relative z-10 text-center max-w-5xl mx-auto transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
+          className={`relative z-10 text-center max-w-5xl mx-auto transition-all duration-1000 ${
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
         >
           <div className="mb-8">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border border-cyan-700 text-cyan-300 font-semibold shadow-sm backdrop-blur-md">
@@ -304,9 +323,10 @@ const HealthcareLandingPage = () => {
               </span>
             </button>
 
-            <button 
+            <button
               onClick={() => alert("Demo coming soon!")}
-              className="group flex items-center cursor-pointer px-8 py-4 rounded-2xl font-semibold text-lg border-2 border-gray-600 hover:border-emerald-400/50 transition-all duration-300 hover:bg-emerald-500/5 backdrop-blur-sm">
+              className="group flex items-center cursor-pointer px-8 py-4 rounded-2xl font-semibold text-lg border-2 border-gray-600 hover:border-emerald-400/50 transition-all duration-300 hover:bg-emerald-500/5 backdrop-blur-sm"
+            >
               <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
               Watch Demo
             </button>
@@ -454,10 +474,11 @@ const HealthcareLandingPage = () => {
                   <button
                     key={index}
                     onClick={() => setCurrentTestimonial(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentTestimonial
-                      ? "bg-emerald-400 scale-125"
-                      : "bg-gray-600 hover:bg-gray-500"
-                      }`}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentTestimonial
+                        ? "bg-emerald-400 scale-125"
+                        : "bg-gray-600 hover:bg-gray-500"
+                    }`}
                   />
                 ))}
               </div>
@@ -509,7 +530,10 @@ const HealthcareLandingPage = () => {
       </section>
 
       {/* Contact Section with Globe backdrop */}
-      <section id="contact" className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden min-h-[400px] md:min-h-[500px]">
+      <section
+        id="contact"
+        className="py-16 md:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden min-h-[400px] md:min-h-[500px]"
+      >
         {/* Globe and overlay background */}
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           <div className="relative">

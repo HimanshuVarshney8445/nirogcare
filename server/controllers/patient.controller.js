@@ -36,26 +36,32 @@ export const patientProfile = async (req, res) => {
 
 
 
-// Fetch nearby hospitals within 10km
+// Fetch nearby hospitals
 export const getNearbyHospitals = async (req, res) => {
   try {
-    const { lat, lng } = req.body;
+    const { lat, lng, maxDistance } = req.body;
 
     if (!lat || !lng) {
-      return res.status(400).json({ error: "Latitude and longitude are required" });
+      const allHospitals = await Hospital.find({});
+      return res.status(200).json({ hospitals: allHospitals });
+    }
+
+    const geoNearOptions = {
+      near: {
+        type: "Point",
+        coordinates: [parseFloat(lng), parseFloat(lat)],
+      },
+      distanceField: "distance", // field added to each doc
+      spherical: true,
+    };
+
+    if (maxDistance && !isNaN(maxDistance)) {
+      geoNearOptions.maxDistance = parseFloat(maxDistance);
     }
 
     const nearbyHospitals = await Hospital.aggregate([
       {
-        $geoNear: {
-          near: {
-            type: "Point",
-            coordinates: [parseFloat(lng), parseFloat(lat)],
-          },
-          distanceField: "distance", // field added to each doc
-          spherical: true,
-          maxDistance: 10000, // 10km in meters
-        },
+        $geoNear: geoNearOptions,
       },
     ]);
 
@@ -66,31 +72,32 @@ export const getNearbyHospitals = async (req, res) => {
   }
 };
 
-
-
-// fetch nearby labs within 10 km
-
-
+// fetch nearby labs
 export const getNearbylabs = async (req, res) => {
   try {
-    // For production, use actual req.query values
-    const { lat, lng } = req.body;
+    const { lat, lng, maxDistance } = req.body;
 
     if (!lat || !lng) {
-      return res.status(400).json({ error: "Latitude and longitude are required" });
+      const allLabs = await Lab.find({});
+      return res.status(200).json({ labs: allLabs });
+    }
+
+    const geoNearOptions = {
+      near: {
+        type: "Point",
+        coordinates: [parseFloat(lng), parseFloat(lat)],
+      },
+      distanceField: "distance", // Distance in meters
+      spherical: true,
+    };
+
+    if (maxDistance && !isNaN(maxDistance)) {
+      geoNearOptions.maxDistance = parseFloat(maxDistance);
     }
 
     const nearbyLabs = await Lab.aggregate([
       {
-        $geoNear: {
-          near: {
-            type: "Point",
-            coordinates: [parseFloat(lng), parseFloat(lat)],
-          },
-          distanceField: "distance", // Distance in meters
-          spherical: true,
-          maxDistance: 10000, // 10 km in meters
-        },
+        $geoNear: geoNearOptions,
       },
     ]);
 

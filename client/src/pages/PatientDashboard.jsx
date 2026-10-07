@@ -68,6 +68,8 @@ const PatientDashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [hospitals, setHospitals] = useState([]);
   const [labs, setLabs] = useState([]);
+  const [isFetchingHospitals, setIsFetchingHospitals] = useState(false);
+  const [isFetchingLabs, setIsFetchingLabs] = useState(false);
   const [userData, setUserData] = useState([]);
   const [appointment, setAppointment] = useState([]);
   const [labAppointments, setLabAppointment] = useState([]);
@@ -199,15 +201,22 @@ const PatientDashboard = () => {
   };
 
   const getHospital = async () => {
+    setIsFetchingHospitals(true);
     if (!navigator.geolocation) {
-      toast.error("Geolocation not supported.");
+      try {
+        const response = await getAllNearbyHospitals({});
+        if (response) setHospitals(response.hospitals || []);
+      } catch {
+        toast.error("Failed to fetch hospitals.");
+      } finally {
+        setIsFetchingHospitals(false);
+      }
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         try {
           const response = await getAllNearbyHospitals({
             lat: latitude,
@@ -218,12 +227,22 @@ const PatientDashboard = () => {
           }
         } catch {
           toast.error("Failed to fetch hospitals.");
+        } finally {
+          setIsFetchingHospitals(false);
         }
       },
-      (err) => {
-        console.error(err);
-        toast.error("Please allow location access.");
+      async (err) => {
+        console.error("Geolocation error:", err);
+        try {
+          const response = await getAllNearbyHospitals({});
+          if (response) setHospitals(response.hospitals || []);
+        } catch {
+          toast.error("Failed to fetch hospitals.");
+        } finally {
+          setIsFetchingHospitals(false);
+        }
       },
+      { timeout: 10000 }
     );
   };
 
@@ -248,13 +267,25 @@ const PatientDashboard = () => {
   }, [activeTab]);
 
   const getLabs = async () => {
-    try {
-      // Get user's current position
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
+    setIsFetchingLabs(true);
+    if (!navigator.geolocation) {
+      try {
+        const response = await getAllNearbyLabs({});
+        if (response) setLabs(response.labs || []);
+      } catch {
+        toast.error("Failed to fetch labs.");
+      } finally {
+        setIsFetchingLabs(false);
+      }
+      return;
+    }
 
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        try {
           const response = await getAllNearbyLabs({
             lat: latitude,
             lng: longitude,
@@ -263,15 +294,26 @@ const PatientDashboard = () => {
           if (response) {
             setLabs(response?.labs || []);
           }
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          toast.error("Location permission is required to find nearby labs.");
-        },
-      );
-    } catch (error) {
-      console.error("Error in getLabs:", error);
-    }
+        } catch (error) {
+          console.error("Error in getLabs:", error);
+          toast.error("Failed to fetch labs.");
+        } finally {
+          setIsFetchingLabs(false);
+        }
+      },
+      async (error) => {
+        console.error("Geolocation error:", error);
+        try {
+          const response = await getAllNearbyLabs({});
+          if (response) setLabs(response.labs || []);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsFetchingLabs(false);
+        }
+      },
+      { timeout: 10000 }
+    );
   };
 
   useEffect(() => {
@@ -761,7 +803,7 @@ const PatientDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
-              <HospitalAppointmentBooking hospitals={hospitals} />
+              <HospitalAppointmentBooking hospitals={hospitals} loading={isFetchingHospitals} />
             </div>
           </div>
         );
@@ -769,7 +811,7 @@ const PatientDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700/50">
-              <LabAppointmentBooking labs={labs} />
+              <LabAppointmentBooking labs={labs} loading={isFetchingLabs} />
             </div>
           </div>
         );
