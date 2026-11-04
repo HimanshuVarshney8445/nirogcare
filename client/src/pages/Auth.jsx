@@ -61,27 +61,22 @@ const Auth = () => {
     try {
       setIsLoading(true);
 
-      if (isSignup) {
-        const response = await callAuthRegisterApi(formData);
-        toast.success(response.message || "Verification code sent to your email.");
-        navigate("/verify-email", {
-          state: {
-            email: formData.email.trim().toLowerCase(),
-            resendAfterSeconds: response.resendAfterSeconds ?? 60,
-          },
-        });
-        return;
-      }
-
-      const response = await callAuthLoginApi(formData.email, formData.password);
+      const response = isSignup
+        ? await callAuthRegisterApi(formData)
+        : await callAuthLoginApi(formData.email, formData.password);
 
       if (response?.user) {
         await refetchUser();
 
-        toast.success("Logged in successfully!", {
-          duration: 3000,
-          className: "doctor-toast",
-        });
+        toast.success(
+          isSignup
+            ? "Account created successfully!"
+            : "Logged in successfully!",
+          {
+            duration: 3000,
+            className: "doctor-toast",
+          },
+        );
 
         navigate(
           response.user.role
@@ -92,18 +87,6 @@ const Auth = () => {
     } catch (error) {
       const message =
         error.message || "Authentication failed. Please try again.";
-
-      if (isSignup && error.data?.verificationPending) {
-        toast.error(message);
-        navigate("/verify-email", {
-          state: {
-            email: formData.email.trim().toLowerCase(),
-            resendAfterSeconds: error.data.resendAfterSeconds ?? 60,
-            initialError: message,
-          },
-        });
-        return;
-      }
 
       setErrorMessage(message);
       toast.error(message);
@@ -320,7 +303,6 @@ const Auth = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      minLength={isSignup ? 6 : undefined}
                       className="w-full pl-12 pr-12 py-3 bg-gray-800/60 border border-gray-700 rounded-xl text-base text-white placeholder-gray-500 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
                     />
 

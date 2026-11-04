@@ -11,7 +11,6 @@ import LabAdmin from "./pages/LabAdmin";
 import { ProtectRole } from "./component/protect_role";
 import HospitalProfileForm from "./component/HospitalProfile";
 import RootRoute from "./RootRoute";
-import VerifyEmail from "./pages/VerifyEmail";
 
 const App = () => {
   return (
@@ -19,7 +18,6 @@ const App = () => {
       <Routes>
         <Route path="/" element={<RootRoute />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route
           path="/select-role"

@@ -19,7 +19,6 @@ import notificationRoutes from './routes/notificationRoutes.js';
 
 dotenv.config();
 const app = express();
-app.set("trust proxy", 1);
 
 const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173")
   .split(",")
