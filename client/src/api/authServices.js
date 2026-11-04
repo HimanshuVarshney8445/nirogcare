@@ -5,6 +5,16 @@ export async function callAuthRegisterApi(formData) {
   return response.data;
 }
 
+export async function verifyRegistrationOtpApi(email, otp) {
+  const response = await api.post("/api/auth/register/verify-otp", { email, otp });
+  return response.data;
+}
+
+export async function resendRegistrationOtpApi(email) {
+  const response = await api.post("/api/auth/register/resend-otp", { email });
+  return response.data;
+}
+
 export async function callAuthLoginApi(email, password) {
   const response = await api.post("/api/auth/login", { email, password });
   return response.data;
@@ -19,4 +29,3 @@ export async function updateFcmTokenApi(fcmToken) {
   const response = await api.patch("/api/auth/update-fcm-token", { fcmToken });
   return response.data;
 }
-
